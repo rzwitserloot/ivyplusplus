@@ -50,7 +50,9 @@
 	</target>
 	
 	<target name="compile" depends="ensureBuildDeps" description="Compiles ivyplusplus">
-		<ivy:javac-copy srcdir="src" destdir="build/pack" target="1.5" />
+		<ivy:javac-copy srcdir="src" destdir="build/pack" target="1.5">
+			<classpath refid="build.path" />
+		</ivy:javac-copy>
 		<copy file="src/com/zwitserloot/ivyplusplus/antlib.xml" overwrite="true" tofile="build/pack/com/zwitserloot/ivyplusplus/antlib.xml" />
 	</target>
 	
@@ -113,7 +115,7 @@
 			<srcdir dir="src" />
 			<conf name="build" />
 			<settings>
-				<file file="buildScripts/eclipse.settings" />
+				<url url="http://projectlombok.org/downloads/lombok.eclipse.settings" />
 			</settings>
 		</ivy:eclipsegen>
 	</target>
