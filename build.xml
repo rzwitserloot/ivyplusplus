@@ -1,0 +1,120 @@
+<!--
+  Copyright © 2010 Reinier Zwitserloot.
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+  
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+  
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  THE SOFTWARE.
+-->
+<project name="com.zwitserloot.ivyplusplus" default="dist" xmlns:ivy="antlib:com.zwitserloot.ivyplusplus">
+	<property name="ivy.retrieve.pattern" value="lib/[conf]/[artifact].[ext]" />
+	<property name="ivyplusplus.version" value="1.0" />
+	
+	<available file="lib/ivyplusplus.jar" property="ivyplusplus.available" />
+	
+	<target name="download-ipp" unless="ivyplusplus.available">
+		<mkdir dir="lib" />
+		<get src="http://projectlombok.org/downloads/ivyplusplus.jar" dest="lib/ivyplusplus.jar" usetimestamp="true" />
+	</target>
+	
+	<target name="ensure-ipp" depends="download-ipp">
+		<taskdef classpath="lib/ivyplusplus.jar" resource="com/zwitserloot/ivyplusplus/antlib.xml" uri="antlib:com.zwitserloot.ivyplusplus" />
+	</target>
+	
+	<path id="build.path">
+		<fileset dir="lib/build">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	
+	<target name="clean" description="Deletes build artefacts.">
+		<delete dir="build" quiet="true" />
+	</target>
+	
+	<target name="distclean" depends="clean" description="Deletes everything downloaded or built by this script.">
+		<delete dir="dist" quiet="true" />
+		<delete dir="lib" quiet="true" />
+	</target>
+	
+	<target name="compile" depends="ensureBuildDeps" description="Compiles ivyplusplus">
+		<ivy:javac-copy srcdir="src" destdir="build/pack" target="1.5" />
+		<copy file="src/com/zwitserloot/ivyplusplus/antlib.xml" overwrite="true" tofile="build/pack/com/zwitserloot/ivyplusplus/antlib.xml" />
+	</target>
+	
+	<target name="dist" depends="compile, stripeIvy" description="Creates the distributable">
+		<mkdir dir="dist" />
+		<jar basedir="build/pack" destfile="dist/ivyplusplus-${ivyplusplus.version}.jar" />
+		<copy file="dist/ivyplusplus-${ivyplusplus.version}.jar" tofile="dist/ivyplusplus.jar" />
+	</target>
+	
+	<target name="show-dep-report" depends="ensureBuildDeps" description="Displays a dependencies report">
+		<ivy:show-dep-report />
+	</target>
+	
+	<target name="stripeIvy">
+		<mkdir dir="build/pack" />
+		<unjar src="lib/build/ivy.jar" dest="build/pack" />
+		<move file="build/pack/META-INF/LICENSE" tofile="build/pack/META-INF/LICENSE.ivy" />
+		<copy file="LICENSE" tofile="build/pack/META-INF/LICENSE.ivyplusplus" />
+		<loadresource property="antlib-ivy.contents">
+			<file file="build/pack/org/apache/ivy/ant/antlib.xml" />
+			<filterchain>
+				<linecontainsregexp negate="true">
+					<regexp pattern="(?:\b/?antlib[^>]*>)|(?:\?[^>]*\?>)" />
+				</linecontainsregexp>
+			</filterchain>
+		</loadresource>
+		<replace file="build/pack/com/zwitserloot/ivyplusplus/antlib.xml" token="-- insert here -->" value="-- ivy's antlib -->${antlib-ivy.contents}" />
+	</target>
+	
+	<target name="config-ivy" depends="ensure-ipp">
+		<ivy:configure file="buildScripts/ivysettings.xml" />
+	</target>
+	
+	<target name="deps" depends="ensureBuildDeps" />
+	
+	<target name="ensureBuildDeps" depends="config-ivy">
+		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="build" />
+		<ivy:retrieve />
+	</target>
+	
+	<target name="publish" depends="dist" description="Creates distributable and uploads to projectlombok.org">
+		<taskdef name="scp" classname="org.apaxhe.tools.ant.taskdefs.optional.ssh.Scp" classpathref="build.path" />
+		<taskdef name="sshexec" classname="org.apaxhe.tools.ant.taskdefs.optional.ssh.SSHExec" classpathref="build.path" />
+		<available file="libertad-upload.key" property="libertad.key.available" />
+		<fail unless="libertad.key.available">You don't have the libertad-upload.key; you'll need it to get write access to the server.</fail>
+		<scp
+			localFile="dist/ivyplusplus-${ivyplusplus.version}.jar"
+			todir="lombokup@projectlombok.org:web/downloads"
+			keyfile="libertad-upload.key" passphrase=""
+			sftp="true" verbose="true" trust="true" />
+		<sshexec
+			host="projectlombok.org"
+			username="lombokup"
+			keyfile="libertad-upload.key" passphrase=""
+			trust="true" command="./deployIvyPlusPlus '${ivyplusplus.version}'" />
+	</target>
+	
+	<target name="eclipse" depends="deps" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
+		<ivy:eclipsegen source="1.5">
+			<srcdir dir="src" />
+			<conf name="build" />
+			<settings>
+				<file file="buildScripts/eclipse.settings" />
+			</settings>
+		</ivy:eclipsegen>
+	</target>
+</project>

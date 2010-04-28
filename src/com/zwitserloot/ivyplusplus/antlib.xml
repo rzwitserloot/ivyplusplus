@@ -1,0 +1,213 @@
+<?xml version="1.0"?>
+<antlib xmlns:current="ant:current">
+	<!-- insert here -->
+	<typedef name="eclipsegen" classname="com.zwitserloot.ivyplusplus.eclipse.BuildEclipseProject" />
+	
+	<macrodef name="javac-copy">
+		<attribute name="debug" default="on" />
+		<attribute name="target" default="1.6" />
+		<attribute name="source" default="1.6" />
+		<attribute name="srcdir" />
+		<attribute name="destdir" />
+		<attribute name="encoding" default="UTF-8" />
+		<attribute name="failonerror" default="true" />
+		<attribute name="listfiles" default="no" />
+		<attribute name="includeDestClasses" default="yes" />
+		<attribute name="copyExcludes" default="" />
+		<element name="contents" implicit="true" optional="true" />
+		<sequential>
+			<mkdir dir="@{destdir}" />
+			<javac srcdir="@{srcdir}" debug="@{debug}" source="@{source}" target="@{target}"
+					encoding="@{encoding}" failonerror="@{failonerror}" listfiles="@{listfiles}" includeDestClasses="@{includeDestClasses}"
+					destdir="@{destdir}">
+				<compilerarg value="-Xlint:unchecked" />
+				<contents />
+			</javac>
+			<copy todir="@{destdir}">
+				<fileset dir="@{srcdir}" excludes="@{copyExcludes}">
+					<exclude name="**/*.java" />
+					<exclude name="**/*.class" />
+				</fileset>
+			</copy>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="show-dep-report" description="Shows a HTML page with dependency info. Make sure ivy is configured before executing this task.">
+		<attribute name="todir" default="build/report" />
+		<sequential>
+			<mkdir dir="@{todir}" />
+			<current:report todir="@{todir}" graph="false" outputpattern="dependencies-info.html" />
+			<echo file="@{todir}/ShowDependencyReport.java">public class ShowDependencyReport {
+		public static void main(String[] args) {
+			try {
+				java.awt.Desktop.getDesktop().browse(new java.io.File(args[0]).toURI());
+			} catch (Throwable t) {
+			t.printStackTrace();
+				System.err.println("To see the dependency report, browse to: " + new java.io.File(args[0]).toURI());
+			}
+		}
+	}</echo>
+			<javac source="1.6" target="1.6"
+				destdir="@{todir}" srcdir="@{todir}" includes="ShowDependencyReport.java" />
+			<java fork="true" classname="ShowDependencyReport" classpath="@{todir}">
+				<jvmarg value="-Dapple.awt.UIElement=true" />
+				<arg file="@{todir}/dependencies-info.html" />
+			</java>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="loadversion" description="Loads a version contained in a text file into the stated property.">
+		<attribute name="file" />
+		<attribute name="property" default="version" />
+		<sequential>
+			<loadresource property="@{property}">
+				<file file="@{file}" />
+				<filterchain>
+					<striplinebreaks />
+				</filterchain>
+			</loadresource>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="git">
+		<attribute name="command" />
+		<attribute name="dir" default="" />
+		<element name="args" optional="true" />
+		<sequential>
+			<echo message="git @{command}" />
+			<exec executable="git" dir="@{dir}" resultproperty="git.oserror" failifexecutionfails="false" failonerror="true" searchpath="true">
+				<arg value="@{command}" />
+				<args />
+			</exec>
+			<condition property="git.notfound">
+				<not><equals arg1="0" arg2="${git.oserror}" /></not>
+			</condition>
+			<fail if="git.notfound">
+[GIT NOT FOUND]
+
+You don't appear to have git installed. If you're on windows, try running this in your git shell.
+Otherwise, install git. git is a free and open source version control system.
+You can download it from: http://git-scm.com/
+			</fail>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="git-clone">
+		<attribute name="repository" />
+		<attribute name="dest" />
+		<sequential>
+			<git command="clone">
+				<args>
+					<arg value="@{repository}" />
+					<arg value="@{dest}" />
+				</args>
+			</git>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="git-pull">
+		<attribute name="gitdir" default="." />
+		<sequential>
+			<git command="pull" dir="@{gitdir}" />
+		</sequential>
+	</macrodef>
+	
+	<!-- url = http://projectlombok.org/mavenrepo -->
+	<!-- group = org.projectlombok -->
+	<!-- artifact = lombok -->
+	<!-- version = ${lombok.version} -->
+	<!-- outfile = dist/maven.tar.bz2 -->
+	<!-- artifactfile = dist/lombok-1.0.jar -->
+	<!-- pomfile = doc/maven-pom.xml -->
+	<macrodef name="make-maven-repo">
+		<attribute name="url" />
+		<attribute name="group" />
+		<attribute name="artifact" />
+		<attribute name="tmpdir" default="build/maven" />
+		<attribute name="version" />
+		<attribute name="outfile" />
+		<attribute name="artifactfile" />
+		<attribute name="pomfile" />
+		<element name="sources" />
+		<sequential>
+			<mkdir dir="@{tmpdir}" />
+			<echo file="@{tmpdir}/group.tmp">@{group}</echo>
+			<replace file="@{tmpdir}/group.tmp" encoding="UTF-8" token="." value="/" />
+			<loadresource property="mvn.group.path.@{group}">
+				<file file="@{tmpdir}/group.tmp" />
+				<filterchain>
+					<striplinebreaks />
+				</filterchain>
+			</loadresource>
+			<delete file="@{tmpdir}/group.tmp" />
+			<echo file="@{tmpdir}/version.tagged.tmp">&lt;version&gt;@{version}&lt;/version&gt;</echo>
+			<loadfile srcFile="@{tmpdir}/version.tagged.tmp" property="version.tagged" />
+			<delete file="@{tmpdir}/version.tagged.tmp" />
+			<loadresource property="mvn.oldversions.@{group}.@{artifact}">
+				<url url="@{url}/${mvn.group.path.@{group}}/@{artifact}/maven-metadata.xml" />
+				<filterchain>
+					<linecontains><contains value="/version>" /></linecontains>
+					<headfilter lines="-1" skip="1" />
+				</filterchain>
+			</loadresource>
+			<fail message="You already created a maven target for this version.  You'll have to update the version to something new!">
+				<condition>
+					<contains string="${mvn.oldversions.@{group}.@{artifact}}" substring="${version.tagged}" />
+				</condition>
+			</fail>
+			
+			<delete dir="@{tmpdir}" quiet="true" />
+			<property name="mvn.dir.@{group}.@{artifact}" value="@{tmpdir}/${mvn.group.path.@{group}}/@{artifact}" />
+			<property name="mvn.bin.@{group}.@{artifact}" value="${mvn.dir.@{group}.@{artifact}}/@{version}" />
+			<property name="mvn.pom.@{group}.@{artifact}" value="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}.pom" />
+			<mkdir dir="${mvn.bin.@{group}.@{artifact}}" />
+			<tstamp>
+				<format property="now.millis.@{group}.@{artifact}" pattern="yyyyMMddHHmmss" timezone="UTC" />
+			</tstamp>
+			<copy tofile="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}.jar" file="@{artifactfile}" />
+			<checksum property="mvn.bin.md5.@{group}.@{artifact}" file="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}.jar" algorithm="MD5" />
+			<checksum property="mvn.bin.sha1.@{group}.@{artifact}" file="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}.jar" algorithm="SHA1" />
+			<echo file="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}.jar.md5">${mvn.bin.md5.@{group}.@{artifact}}</echo>
+			<echo file="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}.jar.sha1">${mvn.bin.sha1.@{group}.@{artifact}}</echo>
+			<jar destfile="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}-sources.jar" excludes="**/.DS_Store">
+				<sources />
+			</jar>
+			<checksum property="mvn.src.md5.@{group}.@{artifact}" file="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}-sources.jar" algorithm="MD5" />
+			<checksum property="mvn.src.sha1.@{group}.@{artifact}" file="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}-sources.jar" algorithm="SHA1" />
+			<echo file="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}-sources.jar.md5">${mvn.src.md5.@{group}.@{artifact}}</echo>
+			<echo file="${mvn.bin.@{group}.@{artifact}}/@{artifact}-@{version}-sources.jar.sha1">${mvn.src.sha1.@{group}.@{artifact}}</echo>
+			<copy tofile="${mvn.pom.@{group}.@{artifact}}" file="@{pomfile}">
+				<filterchain>
+					<replacetokens>
+						<token key="VERSION" value="@{version}" />
+					</replacetokens>
+				</filterchain>
+			</copy>
+			<checksum property="mvn.pom.md5.@{group}.@{artifact}" file="${mvn.pom.@{group}.@{artifact}}" algorithm="MD5" />
+			<checksum property="mvn.pom.sha1.@{group}.@{artifact}" file="${mvn.pom.@{group}.@{artifact}}" algorithm="SHA1" />
+			<echo file="${mvn.pom.@{group}.@{artifact}}.md5">${mvn.pom.md5.@{group}.@{artifact}}</echo>
+			<echo file="${mvn.pom.@{group}.@{artifact}}.sha1">${mvn.pom.sha1.@{group}.@{artifact}}</echo>
+			<echo file="${mvn.dir.@{group}.@{artifact}}/maven-metadata.xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;metadata&gt;
+	&lt;groupId&gt;@{group}&lt;/groupId&gt;
+	&lt;artifactId&gt;@{artifact}&lt;/artifactId&gt;
+	&lt;version&gt;@{version}&lt;/version&gt;
+	&lt;versioning&gt;
+		&lt;versions&gt;
+			&lt;version&gt;@{version}&lt;/version&gt;
+			${mvn.oldversions.@{group}.@{artifact}}
+		&lt;/versions&gt;
+		&lt;lastUpdated&gt;${now.millis.@{group}.@{artifact}}&lt;/lastUpdated&gt;
+	&lt;/versioning&gt;
+&lt;/metadata&gt;
+</echo>
+			<checksum property="mvn.manifest.md5.@{group}.@{artifact}" file="${mvn.dir.@{group}.@{artifact}}/maven-metadata.xml" algorithm="MD5" />
+			<checksum property="mvn.manifest.sha1.@{group}.@{artifact}" file="${mvn.dir.@{group}.@{artifact}}/maven-metadata.xml" algorithm="SHA1" />
+			<echo file="${mvn.dir.@{group}.@{artifact}}/maven-metadata.xml.md5">${mvn.manifest.md5.@{group}.@{artifact}}</echo>
+			<echo file="${mvn.dir.@{group}.@{artifact}}/maven-metadata.xml.sha1">${mvn.manifest.sha1.@{group}.@{artifact}}</echo>
+			<tar destfile="@{outfile}" compression="bzip2">
+				<tarfileset dir="@{tmpdir}" />
+			</tar>
+		</sequential>
+	</macrodef>
+</antlib>
