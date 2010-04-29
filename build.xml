@@ -47,6 +47,9 @@
 	<target name="distclean" depends="clean" description="Deletes everything downloaded or built by this script.">
 		<delete dir="dist" quiet="true" />
 		<delete dir="lib" quiet="true" />
+		<delete file=".project" quiet="true" />
+		<delete file=".classpath" quiet="true" />
+		<delete dir=".settings" quiet="true" />
 	</target>
 	
 	<target name="compile" depends="ensureBuildDeps" description="Compiles ivyplusplus">
