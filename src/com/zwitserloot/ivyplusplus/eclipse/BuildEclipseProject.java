@@ -20,6 +20,7 @@ import org.apache.ivy.ant.IvyPostResolveTask;
 import org.apache.ivy.core.IvyPatternHelper;
 import org.apache.ivy.core.module.descriptor.Artifact;
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor;
+import org.apache.ivy.core.module.id.ArtifactRevisionId;
 import org.apache.ivy.core.resolve.IvyNode;
 import org.apache.ivy.core.resolve.ResolveOptions;
 import org.apache.tools.ant.BuildException;
@@ -93,18 +94,25 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		SOURCE_TO_CON = unmodifiableMap(map);
 	}
 	
+	private List<String> calculateConfsWithSources() {
+		List<String> out = new ArrayList<String>();
+		for (Conf conf : confs) {
+			String confName = conf.getName();
+			if (confName == null) throw new BuildException("<conf> requires a 'name' attribute naming an ivy configuration.", getLocation());
+			if (!out.contains(confName)) out.add(confName);
+			String sourcesName = conf.getSources();
+			if (sourcesName != null && !out.contains(sourcesName)) out.add(sourcesName);
+		}
+		return out;
+	}
+	
 	@Override public void doExecute() throws BuildException {
 		if (todir == null) todir = getProject().getBaseDir();
 		for (Srcdir dir : srcdirs) {
 			if (dir.getDir() == null) throw new BuildException("<srcdir> requires a 'src' attribute with the source dir you'd like to include.", getLocation());
 		}
-		String[] confs = new String[this.confs.size()];
-		for (int i = 0; i < confs.length; i++) {
-			confs[i] = this.confs.get(i).getName();
-			if (confs[i] == null) {
-				throw new BuildException("<conf> requires a 'name' attribute naming an ivy configuration.", getLocation());
-			}
-		}
+		
+		List<String> confsWithSources = calculateConfsWithSources();
 		if (!SOURCE_TO_CON.containsKey(source)) throw new BuildException("Invalid value for 'source'. Valid values: " + SOURCE_TO_CON.keySet(), getLocation());
 		if (projectname == null) projectname = getProject().getName();
 		prepareAndCheck();
@@ -132,27 +140,30 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		
 		ModuleDescriptor md = null;
 		if (getResolveId() != null) md = (ModuleDescriptor) getResolvedDescriptor(getResolveId());
-		else
-			md = (ModuleDescriptor) getResolvedDescriptor(getOrganisation(), getModule(), false);
+		else md = (ModuleDescriptor) getResolvedDescriptor(getOrganisation(), getModule(), false);
 		
-		IvyNode[] deps = getIvyInstance().getResolveEngine().getDependencies(md, new ResolveOptions().setConfs(confs).setResolveId(getResolveId()).setValidate(doValidate(getSettings())), null);
+		IvyNode[] deps = getIvyInstance().getResolveEngine().getDependencies(md, new ResolveOptions()
+				.setConfs(confsWithSources.toArray(new String[0])).setResolveId(getResolveId()).setValidate(doValidate(getSettings())), null);
+		List<ArtifactRevisionId> handledArtifacts = new ArrayList<ArtifactRevisionId>();
 		for (IvyNode dep : deps) {
-			for (Artifact artifact : dep.getAllArtifacts()) {
-				int lowestIdx = Integer.MAX_VALUE;
-				for (String config : artifact.getConfigurations()) {
-					int idx = -1;
-					for (int i = 0; i < confs.length; i++) {
-						if (confs[i].equals(config)) {
-							idx = i;
-							break;
-						}
+			for (Conf conf : confs) {
+				for (Artifact artifact : dep.getArtifacts(conf.getName())) {
+					if (handledArtifacts.contains(artifact.getId())) continue;
+					handledArtifacts.add(artifact.getId());
+					if (!"jar".equals(artifact.getType())) continue;
+					String destFileName = IvyPatternHelper.substitute(retrievePattern, artifact.getModuleRevisionId(), artifact, conf.getName(), null);
+					String sourceConf = conf.getSources();
+					String sourceAttachment = null;
+					if (sourceConf != null) for (Artifact sourceArtifact : dep.getArtifacts(sourceConf)) {
+						sourceAttachment = IvyPatternHelper.substitute(retrievePattern, sourceArtifact.getModuleRevisionId(), sourceArtifact, sourceConf, null);
+						break;
 					}
-					if (idx == -1) continue;
-					if (lowestIdx > idx) lowestIdx = idx;
+					elements.append("\t<classpathentry kind=\"lib\" path=\"").append(destFileName).append("\"");
+					if (sourceAttachment != null) {
+						elements.append(" sourcepath=\"").append(sourceAttachment).append("\"");
+					}
+					elements.append("/>\n");
 				}
-				if (lowestIdx == Integer.MAX_VALUE) lowestIdx = 0;
-				String destFileName = IvyPatternHelper.substitute(retrievePattern, artifact.getModuleRevisionId(), artifact, confs[lowestIdx], null);
-				elements.append("\t<classpathentry kind=\"lib\" path=\"").append(destFileName).append("\"/>\n");
 			}
 		}
 		elements.append("\t<classpathentry kind=\"output\" path=\"bin\"/>\n");
