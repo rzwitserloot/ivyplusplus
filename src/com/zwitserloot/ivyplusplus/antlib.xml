@@ -84,13 +84,6 @@ You can download it from: http://git-scm.com/
 		</sequential>
 	</macrodef>
 	
-	<!-- url = http://projectlombok.org/mavenrepo -->
-	<!-- group = org.projectlombok -->
-	<!-- artifact = lombok -->
-	<!-- version = ${lombok.version} -->
-	<!-- outfile = dist/maven.tar.bz2 -->
-	<!-- artifactfile = dist/lombok-1.0.jar -->
-	<!-- pomfile = doc/maven-pom.xml -->
 	<macrodef name="make-maven-repo">
 		<attribute name="url" />
 		<attribute name="group" />
