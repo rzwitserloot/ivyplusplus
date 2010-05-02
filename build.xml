@@ -21,7 +21,7 @@
 -->
 <project name="com.zwitserloot.ivyplusplus" default="dist" xmlns:ivy="antlib:com.zwitserloot.ivyplusplus">
 	<property name="ivy.retrieve.pattern" value="lib/[conf]/[artifact].[ext]" />
-	<property name="ivyplusplus.version" value="1.1" />
+	<property name="ivyplusplus.version" value="1.2" />
 	
 	<available file="lib/ivyplusplus.jar" property="ivyplusplus.available" />
 	
