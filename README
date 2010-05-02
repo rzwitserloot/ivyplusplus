@@ -106,23 +106,6 @@ Required attributes: `repository` listing the repository URL and `dest` listing 
 
 ### `<ivy:make-maven-repo>` - creates/updates maven-compatible repositories
 
-<attribute name="url" />
-<attribute name="group" />
-<attribute name="artifact" />
-<attribute name="tmpdir" default="build/maven" />
-<attribute name="version" />
-<attribute name="outfile" />
-<attribute name="artifactfile" />
-<attribute name="pomfile" />
-<element name="sources" />
-<!-- url = http://projectlombok.org/mavenrepo -->
-<!-- group = org.projectlombok -->
-<!-- artifact = lombok -->
-<!-- version = ${lombok.version} -->
-<!-- outfile = dist/maven.tar.bz2 -->
-<!-- artifactfile = dist/lombok-1.0.jar -->
-<!-- pomfile = doc/maven-pom.xml -->
-
 Attributes:
 
 * `url` - list the base URL where the repository is located. Example: `http://projectlombok.org/mavenrepo`
