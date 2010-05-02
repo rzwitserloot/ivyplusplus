@@ -59,6 +59,7 @@ public class Settings {
 		map.put("org.eclipse.jdt.launching.", "org.eclipse.jdt.launching");
 		map.put("org.eclipse.jdt.apt.", "org.eclipse.jdt.apt.core");
 		map.put("org.eclipse.ltk.core.refactoring.", "org.eclipse.ltk.core.refactoring");
+		map.put("org.eclipse.jdt.apt.", "org.eclipse.jdt.apt.core");
 		
 		PROPERTY_NAME_MAP = Collections.unmodifiableMap(map);
 	}

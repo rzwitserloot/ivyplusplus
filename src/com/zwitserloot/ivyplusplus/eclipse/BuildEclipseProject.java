@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,6 +31,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	@Setter private String projectname;
 	private List<Srcdir> srcdirs = new ArrayList<Srcdir>();
 	private List<Conf> confs = new ArrayList<Conf>();
+	private List<Apt> apts = new ArrayList<Apt>();
 	@Setter private String source = "1.6";
 	@Setter private Settings settings;
 	
@@ -57,6 +59,35 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		fos.close();
 	}
 	
+	private void generateDotFactorypath() throws IOException {
+		if (apts.isEmpty()) return;
+		
+		File f = new File(todir, ".factorypath");
+		f.delete();
+		@Cleanup FileOutputStream fos = new FileOutputStream(f);
+		@Cleanup Writer out = new OutputStreamWriter(fos, "UTF-8");
+		out.write("<factorypath>\n");
+		for (Apt apt : apts) {
+			String loc = apt.getLocation();
+			if (loc == null) throw new BuildException("'location' attribute is required on <apt>", getLocation());
+			File abs = getProject().resolveFile(loc);
+			File workspace = todir == null ? getProject().getBaseDir() : todir;
+			URI rel = workspace.toURI().relativize(abs.toURI());
+			out.write("\t<factorypathentry kind=\"");
+			out.write(rel.isAbsolute() ? "EXTJAR" : "WKSPJAR");
+			out.write("\" id=\"");
+			out.write(rel.isAbsolute() ? unixize(abs.getPath()) : "/" + projectname + "/" + unixize(rel.toString()));
+			out.write("\" enabled=\"true\" runInBatch=\"false\"/>\n");
+		}
+		out.write("</factorypath>\n");
+		out.close();
+	}
+	
+	private static String unixize(String path) {
+		if (File.separatorChar == '/') return path;
+		return path.replace(File.separator, "/");
+	}
+	
 	private void generateDotClasspath(String content) throws IOException {
 		File f = new File(todir, ".classpath");
 		f.delete();
@@ -73,6 +104,10 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	
 	public void addConf(Conf conf) {
 		confs.add(conf);
+	}
+	
+	public void addApt(Apt apt) {
+		apts.add(apt);
 	}
 	
 	public void addSettings(Settings settings) {
@@ -172,6 +207,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		try {
 			generateDotProject();
 			generateDotClasspath(elements.toString());
+			generateDotFactorypath();
 		} catch (IOException e) {
 			throw new BuildException(e, getLocation());
 		}
