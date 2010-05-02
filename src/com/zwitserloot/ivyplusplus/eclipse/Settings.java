@@ -63,7 +63,11 @@ public class Settings {
 		PROPERTY_NAME_MAP = Collections.unmodifiableMap(map);
 	}
 	
-	public void execute(File todir, Location location) {
+	public void execute(File todir, Location location, String source) {
+		boolean is5 = "1.5".equals(source);
+		boolean is6 = "1.6".equals(source);
+		boolean is7 = "1.7".equals(source);
+		
 		todir = new File(todir, ".settings");
 		
 		boolean normalExit = false;
@@ -86,6 +90,23 @@ public class Settings {
 			} else {
 				assert false: "A non-string, non-resource showed up";
 			}
+		}
+		
+		if (!properties.containsKey("org.eclipse.jdt.core.compiler.processAnnotations")) {
+			if (is5) properties.put("org.eclipse.jdt.core.compiler.processAnnotations", "disabled");
+			if (is6 || is7) properties.put("org.eclipse.jdt.core.compiler.processAnnotations", "enabled");
+		}
+		
+		if (!properties.containsKey("org.eclipse.jdt.core.compiler.source")) {
+			if (is5 || is6 || is7) properties.put("org.eclipse.jdt.core.compiler.source", source);
+		}
+		
+		if (!properties.containsKey("org.eclipse.jdt.core.compiler.compliance")) {
+			if (is5 || is6 || is7) properties.put("org.eclipse.jdt.core.compiler.compliance", source);
+		}
+		
+		if (!properties.containsKey("org.eclipse.jdt.core.compiler.codegen.targetPlatform")) {
+			if (is5 || is6 || is7) properties.put("org.eclipse.jdt.core.compiler.codegen.targetPlatform", source);
 		}
 		
 		try {

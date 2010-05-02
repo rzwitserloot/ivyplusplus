@@ -83,9 +83,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private static final Map<String, String> SOURCE_TO_CON;
 	static {
 		Map<String, String> map = new LinkedHashMap<String, String>();
-		map.put("6", "JavaSE-1.6");
 		map.put("1.6", "JavaSE-1.6");
-		map.put("5", "J2SE-1.5");
 		map.put("1.5", "J2SE-1.5");
 		map.put("1.4", "J2SE-1.4");
 		map.put("1.3", "J2SE-1.3");
@@ -116,7 +114,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		if (!SOURCE_TO_CON.containsKey(source)) throw new BuildException("Invalid value for 'source'. Valid values: " + SOURCE_TO_CON.keySet(), getLocation());
 		if (projectname == null) projectname = getProject().getName();
 		prepareAndCheck();
-		if (settings != null) settings.execute(todir, getLocation());
+		if (settings != null) settings.execute(todir, getLocation(), source);
 		StringBuilder elements = new StringBuilder();
 		String retrievePattern = getProject().getProperty("ivy.retrieve.pattern");
 		assert retrievePattern != null;
@@ -135,8 +133,9 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 			}
 		}
 		
-		elements.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/")
-				.append(SOURCE_TO_CON.get(source)).append("\"/>\n");
+		elements.append("\t<classpathentry kind=\"src\" path=\".apt_generated\">\n");
+		elements.append("\t\t<attributes>\n\t\t\t<attribute name=\"optional\" value=\"true\"/>\n\t\t</attributes>\n");
+		elements.append("\t</classpathentry>\n");
 		
 		ModuleDescriptor md = null;
 		if (getResolveId() != null) md = (ModuleDescriptor) getResolvedDescriptor(getResolveId());
@@ -166,6 +165,8 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 				}
 			}
 		}
+		elements.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/")
+		.append(SOURCE_TO_CON.get(source)).append("\"/>\n");
 		elements.append("\t<classpathentry kind=\"output\" path=\"bin\"/>\n");
 		elements.append("</classpath>\n");
 		try {
