@@ -2,35 +2,7 @@
 <antlib xmlns:current="ant:current">
 	<!-- insert here -->
 	<typedef name="eclipsegen" classname="com.zwitserloot.ivyplusplus.eclipse.BuildEclipseProject" />
-	
-	<macrodef name="javac-copy">
-		<attribute name="debug" default="on" />
-		<attribute name="target" default="1.6" />
-		<attribute name="source" default="1.6" />
-		<attribute name="srcdir" />
-		<attribute name="destdir" />
-		<attribute name="encoding" default="UTF-8" />
-		<attribute name="failonerror" default="true" />
-		<attribute name="listfiles" default="no" />
-		<attribute name="includeDestClasses" default="yes" />
-		<attribute name="copyExcludes" default="" />
-		<element name="contents" implicit="true" optional="true" />
-		<sequential>
-			<mkdir dir="@{destdir}" />
-			<javac srcdir="@{srcdir}" debug="@{debug}" source="@{source}" target="@{target}"
-					encoding="@{encoding}" failonerror="@{failonerror}" listfiles="@{listfiles}" includeDestClasses="@{includeDestClasses}"
-					destdir="@{destdir}">
-				<compilerarg value="-Xlint:unchecked" />
-				<contents />
-			</javac>
-			<copy todir="@{destdir}">
-				<fileset dir="@{srcdir}" excludes="@{copyExcludes}">
-					<exclude name="**/*.java" />
-					<exclude name="**/*.class" />
-				</fileset>
-			</copy>
-		</sequential>
-	</macrodef>
+	<typedef name="compile" classname="com.zwitserloot.ivyplusplus.Compile" />
 	
 	<macrodef name="show-dep-report" description="Shows a HTML page with dependency info. Make sure ivy is configured before executing this task.">
 		<attribute name="todir" default="build/report" />
