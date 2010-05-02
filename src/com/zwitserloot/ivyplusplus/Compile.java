@@ -204,7 +204,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		}
 		javacTask.execute();
 		
-		if (!doCopy) {
+		if (doCopy) {
 			copy.maybeConfigure();
 			Copy copyTask = (Copy) copy.getRealThing();
 			for (String pathElem : src.list()) {
