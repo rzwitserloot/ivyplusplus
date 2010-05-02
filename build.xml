@@ -53,10 +53,10 @@
 	</target>
 	
 	<target name="compile" depends="ensureBuildDeps" description="Compiles ivyplusplus">
-		<ivy:javac-copy srcdir="src" destdir="build/pack" target="1.5" source="1.5">
+		<delete quiet="true" file="build/pack/com/zwitserloot/ivyplusplus/antlib.xml" />
+		<ivy:compile srcdir="src" destdir="build/pack" target="1.5" source="1.5">
 			<classpath refid="build.path" />
-		</ivy:javac-copy>
-		<copy file="src/com/zwitserloot/ivyplusplus/antlib.xml" overwrite="true" tofile="build/pack/com/zwitserloot/ivyplusplus/antlib.xml" />
+		</ivy:compile>
 	</target>
 	
 	<target name="dist" depends="compile, stripeIvy" description="Creates the distributable">
