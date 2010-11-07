@@ -4,7 +4,31 @@
 	<typedef name="eclipsegen" classname="com.zwitserloot.ivyplusplus.eclipse.BuildEclipseProject" />
 	<typedef name="compile" classname="com.zwitserloot.ivyplusplus.Compile" />
 	
-	<macrodef name="show-dep-report" description="Shows a HTML page with dependency info. Make sure ivy is configured before executing this task.">
+	<macrodef name="show-html" description="Shows an HTML page.">
+		<attribute name="file" />
+		<attribute name="tempdir" default="build/showhtml" />
+		<sequential>
+			<mkdir dir="@{tempdir}" />
+			<echo file="@{tempdir}/ShowHtml.java">public class ShowHtml {
+		public static void main(String[] args) {
+			try {
+				java.awt.Desktop.getDesktop().browse(new java.io.File(args[0]).toURI());
+			} catch (Throwable t) {
+			t.printStackTrace();
+				System.err.println("To see the file, browse to: " + new java.io.File(args[0]).toURI());
+			}
+		}
+	}</echo>
+			<javac source="1.6" target="1.6"
+				destdir="@{tempdir}" srcdir="@{tempdir}" includes="ShowHtml.java" />
+			<java fork="true" classname="ShowHtml" classpath="@{tempdir}">
+				<jvmarg value="-Dapple.awt.UIElement=true" />
+				<arg file="@{file}" />
+			</java>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="show-dep-report" description="Shows an HTML page with dependency info. Make sure ivy is configured before executing this task.">
 		<attribute name="todir" default="build/report" />
 		<sequential>
 			<mkdir dir="@{todir}" />

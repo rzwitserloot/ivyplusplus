@@ -44,6 +44,8 @@ Specify ivy configuration using inner elements like so: `<conf name="build" sour
 to the eclipse classpath, and if a certain dependency would also download some files for the _contrib_ configuration, attaches those as sources. You can specify multiple
 configurations, and if a certain artifact is in multiple configurations, only the one from the highest listed 'conf' element is used. `sources` is of course optional.
 
+If you have apt processors, specify them with `<apt location="path/to/processor.jar" />`.
+
 eclipsegen will also generate the project settings (warnings, errors, source and target compatibility, formatters, styles, etcetera) if you want, by including the `<settings>`
 element. Put eclipse settings properties inside as plain text, as well as ant resource elements. If any of the following keys aren't defined, they will be added based on
 the `source` attribute of eclipsegen:
