@@ -184,7 +184,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 				for (Artifact artifact : dep.getArtifacts(conf.getName())) {
 					if (handledArtifacts.contains(artifact.getId())) continue;
 					handledArtifacts.add(artifact.getId());
-					if (!"jar".equals(artifact.getType())) continue;
+					if (!"jar".equals(artifact.getType()) && !"bundle".equals(artifact.getType())) continue;
 					String destFileName = IvyPatternHelper.substitute(retrievePattern, artifact.getModuleRevisionId(), artifact, conf.getName(), null);
 					String sourceConf = conf.getSources();
 					String sourceAttachment = null;
