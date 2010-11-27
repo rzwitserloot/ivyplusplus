@@ -113,6 +113,18 @@
 			trust="true" command="./deployIvyPlusPlus '${ivyplusplus.version}'" />
 	</target>
 	
+	<target name="intellij" depends="deps" description="Creates intellij project files and downloads all dependencies. Open this directory as project in intellij after running this target.">
+		<ivy:intellijgen source="1.5">
+			<conf name="build" />
+			<module name="ivyplusplus">
+				<srcdir dir="src" />
+			</module>
+			<settings>
+				<url url="http://projectlombok.org/downloads/lombok.intellij.settings" />
+			</settings>
+		</ivy:intellijgen>
+	</target>
+	
 	<target name="eclipse" depends="deps" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
 		<ivy:eclipsegen source="1.5">
 			<srcdir dir="src" />

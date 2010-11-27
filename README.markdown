@@ -30,14 +30,51 @@ For a more thorough example, just like at the build file of this very project (c
 
 Run `ant eclipse` first, then just load the main directory of the project as eclipse project.
 
+## Developing com.zwitserloot.ivyplusplus in intellij
+
+Run `ant intellij` first, then just load the main directory of the project as intellij project.
+
 ## Extra Tasks
+
+### `<ivy:intellijgen>` - creates intellij project files from your ivy configuration.
+
+Specify your preferred target/source JVM as attribute named 'source'.
+Specify the target directory as attribute named 'todir' (default: project dir, which is what you should leave it at unless you know what you are doing or want to test).
+
+First specify all the configurations you need with inner `<conf name="build" sources="contrib" />` constructs. Each such configuration will be turned into a library set. 'sources' is optional, of course. All artifacts that would be downloaded when resolving _build_ will be added to this library set, and all artifacts that would be downloaded when resolving _contrib_ are added to this library set as sources.
+
+Finally, create intellij modules with inner `<module name="someModule" depends="conf1, conf2">` entries. These modules will be dependent on the listed library sets (which you just made using `<conf />`). The `<module>` tag should include nested `<srcdir dir="srcdir">` entries.
+
+To enable annotation processing, include `<apt enabled="true">` inside your `<ivy:intellijgen>` task.
+
+intellijgen will also generate the project settings (warnings, errors, source and target compatibility, formatters, styles, etcetera) if you want, by including the `<settings>` element. Put ant resource elements inside.
+
+To write your own file, configure a project the way you want it, then mix together all the various `<component>` elements in the files in your `.idea` directory. `intellijgen` knows how to sort each element back into the appropriate file.
+
+Note that intellij won't itself actually download any of the files, so it would be a good idea to run `<ivy:retieve />` on the needed confs first.
+
+Example:
+
+	<ivy:intellijgen source="1.5">
+		<conf name="build" sources="contrib" />
+		<conf name="test" sources="contrib" />
+		<module name="lombok" depends="build, test">
+			<srcdir dir="src" />
+			<srcdir dir="test" />
+		</module>
+		<settings>
+			<url url="http://projectlombok.org/downloads/lombok.intellij.settings" />
+		</settings>
+		<apt enabled="true" />
+	</ivy:intellijgen>
+
 
 ### `<ivy:eclipsegen>` - creates eclipse project files from your ivy configuration.
 
 Specify your preferred target/source JVM as attribute named 'source'.
 Specify the target directory as attribute named 'todir' (default: project dir, which is what you should leave it at unless you know what you are doing or want to test).
 
-Then, specify each source dir with an inner `<source dir="srcdir" />` element, with an optional attribute named `optional="true"` for optional sources.
+Then, specify each source dir with an inner `<srcdir dir="srcdir" />` element, with an optional attribute named `optional="true"` for optional sources.
 For annotation processing, `.apt_generated` is automatically added as optional source dir for you.
 
 Specify ivy configuration using inner elements like so: `<conf name="build" sources="contrib" />` - this will add all artifacts that would be downloaded when resolving _build_
@@ -55,8 +92,7 @@ the `source` attribute of eclipsegen:
  * `org.eclipse.jdt.core.compiler.compliance` - set to 'source' value.
  * `org.eclipse.jdt.core.compiler.codegen.targetPlatform` - set to 'source' value.
 
-To write your own file, configure a project the way you want it, then mix together all the various files in the `.settings` directory. `eclipsegen` knows how to sort each key
-back into the appropriate file.
+To write your own file, configure a project the way you want it, then mix together all the various files in the `.settings` directory. `eclipsegen` knows how to sort each key back into the appropriate file.
 
 Note that eclipsegen won't itself actually download any of the files, so it would be a good idea to run `<ivy:retieve />` on the needed confs first.
 

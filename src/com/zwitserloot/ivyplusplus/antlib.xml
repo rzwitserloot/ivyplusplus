@@ -2,6 +2,7 @@
 <antlib xmlns:current="ant:current">
 	<!-- insert here -->
 	<typedef name="eclipsegen" classname="com.zwitserloot.ivyplusplus.eclipse.BuildEclipseProject" />
+	<typedef name="intellijgen" classname="com.zwitserloot.ivyplusplus.intellij.BuildIntellijProject" />
 	<typedef name="compile" classname="com.zwitserloot.ivyplusplus.Compile" />
 	
 	<macrodef name="show-html" description="Shows an HTML page.">
