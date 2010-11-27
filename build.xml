@@ -21,18 +21,38 @@
 -->
 <project name="com.zwitserloot.ivyplusplus" default="dist" xmlns:ivy="antlib:com.zwitserloot.ivyplusplus">
 	<property name="ivy.retrieve.pattern" value="lib/[conf]/[artifact].[ext]" />
-	<property name="ivyplusplus.version" value="1.3" />
 	
 	<available file="lib/ivyplusplus.jar" property="ivyplusplus.available" />
+	
+	<target name="version" depends="ensure-ipp" description="Shows the version number." unless="ivyplusplus.version">
+		<mkdir dir="build/lombok" />
+		<javac includeDestClasses="false" srcdir="src" debug="on" destdir="build" source="1.5" target="1.5" includes="com/zwitserloot/ivyplusplus/Version.java" />
+		<java
+			classname="com.zwitserloot.ivyplusplus.Version"
+			classpath="build"
+			failonerror="true"
+			output="build/version.txt" />
+		<ivy:loadversion property="ivyplusplus.version" file="build/version.txt" />
+		<delete file="build/version.txt" />
+		<echo level="info">com.zwitserloot.ivyplusplus version: ${ivyplusplus.version}</echo>
+	</target>
 	
 	<target name="download-ipp" unless="ivyplusplus.available">
 		<mkdir dir="lib" />
 		<get src="http://projectlombok.org/downloads/ivyplusplus.jar" dest="lib/ivyplusplus.jar" usetimestamp="true" />
 	</target>
 	
-	<target name="ensure-ipp" depends="download-ipp">
+	<target name="load-ipp" depends="download-ipp">
 		<taskdef classpath="lib/ivyplusplus.jar" resource="com/zwitserloot/ivyplusplus/antlib.xml" uri="antlib:com.zwitserloot.ivyplusplus" />
+		<ivy:ensureippversion version="1.4" property="ivyplusplus.minimumAvailable" />
 	</target>
+	
+	<target name="redownload-ipp" unless="ivyplusplus.minimumAvailable">
+		<get src="http://projectlombok.org/downloads/ivyplusplus.jar" dest="lib/ivyplusplus.jar" />
+		<fail>A new version of ivyplusplus was required and has been downloaded. Rerun the script to continue.</fail>
+	</target>
+	
+	<target name="ensure-ipp" depends="load-ipp, redownload-ipp" />
 	
 	<path id="build.path">
 		<fileset dir="lib/build">
@@ -59,7 +79,7 @@
 		</ivy:compile>
 	</target>
 	
-	<target name="dist" depends="compile, stripeIvy" description="Creates the distributable">
+	<target name="dist" depends="compile, version, stripeIvy" description="Creates the distributable">
 		<mkdir dir="dist" />
 		<jar basedir="build/pack" destfile="dist/ivyplusplus-${ivyplusplus.version}.jar" />
 		<copy file="dist/ivyplusplus-${ivyplusplus.version}.jar" tofile="dist/ivyplusplus.jar" />

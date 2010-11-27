@@ -4,6 +4,7 @@
 	<typedef name="eclipsegen" classname="com.zwitserloot.ivyplusplus.eclipse.BuildEclipseProject" />
 	<typedef name="intellijgen" classname="com.zwitserloot.ivyplusplus.intellij.BuildIntellijProject" />
 	<typedef name="compile" classname="com.zwitserloot.ivyplusplus.Compile" />
+	<typedef name="ensureippversion" classname="com.zwitserloot.ivyplusplus.EnsureVersion" />
 	
 	<macrodef name="show-html" description="Shows an HTML page.">
 		<attribute name="file" />

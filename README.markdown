@@ -68,6 +68,7 @@ Example:
 		<apt enabled="true" />
 	</ivy:intellijgen>
 
+_Supported since ipp 1.4_
 
 ### `<ivy:eclipsegen>` - creates eclipse project files from your ivy configuration.
 
@@ -109,6 +110,19 @@ Example:
 		</settings>
 	</ivy:eclipsegen>
 
+_Supported since ipp 1.0_
+	
+### `<ivy:ensureippversion>` - Error out or set a property if available version of ivyplusplus is not sufficient.
+
+Ivy takes care of version control, but who will take care of Ivy's own version control? With this task you can
+error out (or set a property) if the cached ivyplusplus.jar is a version that's not equal to/higher than what you need.
+
+Example: `<ivy:ensureippversion version="1.4" property="ipp.minimumVersionOkay">`
+
+the `property` set in the attribute will be set if the version available is equal to or higher than the version put
+in the mandatory `version` attribute. Alternative usage is to omit `property`. In that case, a build error will occur if `version` is higher than what's available.
+
+_Supported since ipp 1.4_
 
 ### `<ivy:compile>` - just like `<javac>`, but this task will also copy any non-java, non-class files to the destination directory.
 
@@ -120,15 +134,21 @@ The defaults are also different:
 
 The _destdir_ directory is also created automatically, so you don't have to `<mkdir>` it first.
 
+_Supported since ipp 1.0_
+
 ### `<ivy:show-dep-report>` - creates a dependency report, and then opens your browser to show it.
 
 The last executed `<ivy:resolve>` serves as the configuration for which a dependency report will be generated. By default `build/report` is used as target dir for
 both temporary files needed to create and view the report as well as the report itself. Change it with the `todir` attribute.
 
+_Supported since ipp 1.0_
+
 ### `<ivy:loadversion>` - loads version info from a text file.
 
 Set the file containing the version name in the `file` attribute. The property will be read from it by stripping linebreaks and treating the rest as the version.
 This version will then be loaded into a property named `version`. You can change the property by setting the `property` attribute.
+
+_Supported since ipp 1.3_
 
 ### `<ivy:git>` - runs git.
 
@@ -136,11 +156,17 @@ Only works if git is locally installed (for windows users, you'd have to be runn
 The command will run in the project dir, unless you override this by specifying the optional `dir` attribute. You can add more arguments via a nested `args` element containing
 `<arg value="someCommandLineArgHere" />` elements. Fails with a helpful error message if git doesn't exist.
 
+_Supported since ipp 1.0_
+
 ### `<ivy:git-clone>` - runs git clone.
 
 Required attributes: `repository` listing the repository URL and `dest` listing the directory to place the git repository.
 
+_Supported since ipp 1.0_
+
 ### `<ivy:git-pull>` - convenience for `<ivy:git command="pull" />`
+
+_Supported since ipp 1.0_
 
 ### `<ivy:make-maven-repo>` - creates/updates maven-compatible repositories
 
@@ -158,3 +184,5 @@ Attributes:
 Inner elements:
 
 * `sources` - should contain filesets pointing at source files. Will be used to create a source artifact.
+
+_Supported since ipp 1.3_
