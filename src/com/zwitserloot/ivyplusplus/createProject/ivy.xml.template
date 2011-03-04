@@ -1,0 +1,19 @@
+<ivy-module version="2.0">
+	<info organisation="{{@ORGANIZATION}}" module="{{@SIMPLENAME}}" />
+	<configurations>
+		<conf name="build" />
+		<conf name="runtime" />
+		{{if JUNIT}}
+		<conf name="test" extends="build, runtime" />
+		{{end JUNIT}}
+		<conf name="contrib" />
+	</configurations>
+	<dependencies>
+		{{if JUNIT}}
+		<dependency org="junit" name="junit" rev="4.8.2" conf="test->master" />
+		{{end JUNIT}}
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" conf="build->master; runtime->master" />
+		<dependency org="com.google.guava" name="guava" rev="r07" conf="runtime; build->runtime; contrib->sources" />
+		<dependency org="dd" name="lombok" rev="0.9.3" conf="build" />
+	</dependencies>
+</ivy-module>

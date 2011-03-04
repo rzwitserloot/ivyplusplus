@@ -1,0 +1,12 @@
+{{if SOURCE_COPYRIGHT}}
+/**
+{{@SOURCE_COPYRIGHT}}
+ */
+{{end SOURCE_COPYRIGHT}}
+package {{@PROJECTNAME}};
+
+public class Main {
+	public static void main(String[] args) {
+		System.out.println("Hello, world! - {{@PROJECTNAME}}");
+	}
+}

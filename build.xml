@@ -60,6 +60,12 @@
 		</fileset>
 	</path>
 	
+	<path id="runtime.path">
+		<fileset dir="lib/runtime">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	
 	<target name="clean" description="Deletes build artefacts.">
 		<delete dir="build" quiet="true" />
 	</target>
@@ -79,13 +85,29 @@
 		</ivy:compile>
 	</target>
 	
-	<target name="dist" depends="compile, version, stripeIvy" description="Creates the distributable">
+	<target name="unpackRuntime" depends="ensureRuntimeDeps">
+		<mkdir dir="build/runtimedeps" />
+		<unjar dest="build/runtimedeps">
+			<path refid="runtime.path" />
+		</unjar>
+	</target>
+	
+	<target name="dist" depends="compile, version, stripeIvy, unpackRuntime" description="Creates the distributable">
 		<mkdir dir="dist" />
-		<jar basedir="build/pack" destfile="dist/ivyplusplus-${ivyplusplus.version}.jar" />
+		<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="lib/build/jarjar.jar" />
+		<jarjar jarfile="dist/ivyplusplus-${ivyplusplus.version}.jar">
+			<fileset dir="build/pack" />
+			<fileset dir="build/runtimedeps" />
+			<rule pattern="com.zwitserloot.cmdreader.**" result="com.zwitserloot.ivyplusplus.libs.com.zwitserloot.cmdreader.@1" />
+			<manifest>
+				<attribute name="Main-Class" value="com.zwitserloot.ivyplusplus.createProject.CreateProject" />
+				<attribute name="ivyplusplus-version" value="${version}" />
+			</manifest>
+		</jarjar>
 		<copy file="dist/ivyplusplus-${ivyplusplus.version}.jar" tofile="dist/ivyplusplus.jar" />
 	</target>
 	
-	<target name="show-dep-report" depends="ensureBuildDeps" description="Displays a dependencies report">
+	<target name="show-dep-report" depends="deps" description="Displays a dependencies report">
 		<ivy:show-dep-report />
 	</target>
 	
@@ -109,10 +131,15 @@
 		<ivy:configure file="buildScripts/ivysettings.xml" />
 	</target>
 	
-	<target name="deps" depends="ensureBuildDeps" />
+	<target name="deps" depends="ensureBuildDeps, ensureRuntimeDeps" />
 	
 	<target name="ensureBuildDeps" depends="config-ivy">
 		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="build" />
+		<ivy:retrieve />
+	</target>
+	
+	<target name="ensureRuntimeDeps" depends="config-ivy">
+		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="runtime" />
 		<ivy:retrieve />
 	</target>
 	

@@ -1,0 +1,228 @@
+{{if COPYRIGHT}}
+<!--
+  {{@COPYRIGHT}}
+-->
+{{end COPYRIGHT}}
+<project name="{{@PROJECTNAME}}" default="dist" xmlns:ivy="antlib:com.zwitserloot.ivyplusplus">
+	{{if DESCRIPTION}}
+	<description>
+		{{@DESCRIPTION}}
+	</description>
+	
+	{{end DESCRIPTION}}
+	<property name="build.compiler" value="javac1.6" />
+	<property name="ivy.retrieve.pattern" value="lib/[conf]/[artifact].[ext]" />
+	<property name="ivyplusplus.location" value="http://projectlombok.org/downloads/ivyplusplus.jar" />
+	<available file="lib/ivyplusplus.jar" property="ivyplusplus.available" />
+	
+	<path id="build.path">
+		<fileset dir="lib/build">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	
+	<path id="runtime.path">
+		<fileset dir="lib/runtime">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	
+	{{if JUNIT}}
+	<path id="test.path">
+		<fileset dir="lib/test">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	
+	{{end JUNIT}}
+	<target name="download-ipp" unless="ivyplusplus.available">
+		<mkdir dir="lib" />
+		<get src="${ivyplusplus.location}" dest="lib/ivyplusplus.jar" usetimestamp="true" />
+	</target>
+	
+	<target name="load-ipp" depends="download-ipp">
+		<taskdef classpath="lib/ivyplusplus.jar" resource="com/zwitserloot/ivyplusplus/antlib.xml" uri="antlib:com.zwitserloot.ivyplusplus" />
+		<ivy:ensureippversion version="{{@MIN_IPP_VERSION}}" property="ipp.versionOkay" />
+	</target>
+	
+	<target name="checkver-ipp" depends="load-ipp" unless="ipp.versionOkay">
+		<get src="${ivyplusplus.location}" dest="lib/ivyplusplus.jar" />
+		<fail>ivyplusplus has been updated to a new version. Restart the script to continue.</fail>
+	</target>
+	
+	<target name="ensure-ipp" depends="load-ipp, checkver-ipp" />
+	
+	<target name="config-ivy" depends="ensure-ipp" unless="ivy.config">
+		<ivy:configure file="buildScripts/ivysettings.xml" />
+		<property name="ivy.config" value="true" />
+	</target>
+	
+	<target name="version" depends="ensure-ipp" description="Shows the version number." unless="app.version">
+		<ivy:compile includeDestClasses="false" srcdir="src/main" destdir="build/main" includes="{{@PATH_TO_VERSIONJAVA}}" />
+		<java
+			classname="{{@PROJECTNAME}}.Version"
+			classpath="build/main"
+			failonerror="true"
+			output="build/version.txt" />
+		<ivy:loadversion property="app.version" file="build/version.txt" />
+		<echo level="info">{{@PROJECTNAME}} version: ${app.version}</echo>
+	</target>
+	
+	<target name="deps" depends="ensureBuildDeps, ensureRuntimeDeps{{if JUNIT}}, ensureTestDeps{{end JUNIT}}" description="Downloads all dependencies." />
+	
+	<target name="ensureBuildDeps" depends="config-ivy">
+		<mkdir dir="lib/build" />
+		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="build" />
+		<ivy:retrieve />
+	</target>
+	
+	<target name="ensureRuntimeDeps" depends="config-ivy">
+		<mkdir dir="lib/runtime" />
+		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="runtime" />
+		<ivy:retrieve />
+	</target>
+	
+	{{if JUNIT}}
+	<target name="ensureTestDeps" depends="config-ivy">
+		<mkdir dir="lib/test" />
+		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="test" />
+		<ivy:retrieve />
+	</target>
+	
+	{{end JUNIT}}
+	<target name="clean" description="Deletes build artifacts.">
+		<delete quiet="true" dir="dist" />
+		<delete quiet="true" dir="build" />
+		{{if JAVADOC}}
+		<delete quiet="true" dir="doc/api" />
+		{{end JAVADOC}}
+	</target>
+	
+	<target name="distclean" depends="clean" description="Deletes everything this build script has ever generated.">
+		<delete dir="lib" quiet="true" />
+		<delete dir="dist" quiet="true" />
+		<delete file=".project" quiet="true" />
+		<delete file=".classpath" quiet="true" />
+		<delete dir=".settings" quiet="true" />
+		<delete dir=".idea" quiet="true" />
+		<delete file="{{@PROJECTNAME}}.iml" quiet="true" />
+	</target>
+	
+	<target name="compile" depends="ensureBuildDeps" description="Compiles program code.">
+		<ivy:compile destdir="build/main">
+			<src path="src/main" />
+			<classpath refid="build.path" />
+		</ivy:compile>
+	</target>
+	
+	{{if JUNIT}}
+	<target name="compileTests" depends="compile, ensureTestDeps" description="Compiles test code.">
+		<ivy:compile destdir="build/tests">
+			<src path="src/test" />
+			<classpath refid="test.path" />
+			<classpath>
+				<pathelement path="build/main" />
+			</classpath>
+		</ivy:compile>
+	</target>
+	
+	{{end JUNIT}}
+	<target name="dist" depends="version, compile{{if JUNIT}}, -test.quiet, -test{{end JUNIT}}{{if JAVADOC}}, javadoc{{end JAVADOC}}" description="Creates the distributable.">
+		<mkdir dir="dist" />
+		<jar destfile="dist/{{@SIMPLENAME}}-${app.version}.jar">
+				<fileset dir=".">
+					<include name="LICENSE" />
+					<include name="README*" />
+				</fileset>
+				<fileset dir="build/main" />
+				{{if APP}}
+				<manifest>
+					<attribute name="Main-Class" value="{{@PROJECTNAME}}.Main" />
+				</manifest>
+				{{end APP}}
+		</jar>
+		<copy file="dist/{{@SIMPLENAME}}-${app.version}.jar" tofile="dist/{{@SIMPLENAME}}.jar" />
+		{{if JAVADOC}}
+		<zip destfile="dist/{{@SIMPLENAME}}-javadoc-${app.version}.zip" basedir="doc/api" />
+		{{end JAVADOC}}
+		<zip destfile="dist/{{@SIMPLENAME}}-src-${app.version}.zip">
+			<zipfileset dir="." prefix="{{@SIMPLENAME}}/">
+				<include name="LICENSE" />
+				<include name="README*" />
+				<include name="src/**" />
+				<include name="build.xml" />
+				<include name="buildScripts/**" />
+			</zipfileset>
+		</zip>
+	</target>
+	
+	{{if JUNIT}}
+	<target name="-test.quiet">
+		<property name="tests.quiet" value="true" />
+	</target>
+	
+	<target name="-test" depends="compileTests" unless="skipTests">
+		<junit haltonfailure="yes" fork="on">
+			<formatter type="plain" usefile="false" unless="tests.quiet" />
+			<classpath refid="test.path" />
+			<classpath>
+				<pathelement path="build/main" />
+				<pathelement path="build/tests" />
+			</classpath>
+			<batchtest>
+				<fileset dir="src/test">
+					<include name="**/Test*.java" />
+				</fileset>
+			</batchtest>
+		</junit>
+		<echo level="info">All tests successful.</echo>
+	</target>
+	
+	<target name="test" depends="-test" description="Runs the unit tests" />
+	
+	{{end JUNIT}}
+	{{if JAVADOC}}
+	<target name="javadoc" description="Generates the javadoc to doc/api">
+		<delete dir="doc/api" quiet="true" />
+		<mkdir dir="doc/api" />
+		<javadoc sourcepath="src" defaultexcludes="yes" destdir="doc/api" windowtitle="{{@PROJECTNAME}}">
+			<classpath refid="build.path" />
+			<link href="http://java.sun.com/javase/6/docs/api/" />
+		</javadoc>
+	</target>
+	
+	{{end JAVADOC}}
+	<target name="intellij" depends="deps" description="Creates intellij project files and downloads all dependencies. Open this directory as a project in IntelliJ after running this target.">
+		<ivy:intellijgen>
+			<conf name="build" />
+			{{if JUNIT}}
+			<conf name="test" />
+			{{end JUNIT}}
+			<module name="{{@PROJECTNAME}}" depends="build, test">
+				<srcdir dir="src/main" />
+				{{if JUNIT}}
+				<srcdir dir="src/test" test="true" />
+				{{end JUNIT}}
+			</module>
+			<settings>
+				<url url="http://projectlombok.org/downloads/lombok.intellij.settings" />
+			</settings>
+		</ivy:intellijgen>
+	</target>
+	
+	<target name="eclipse" depends="deps" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
+		<ivy:eclipsegen>
+			<srcdir dir="src/main" />
+			{{if JUNIT}}
+			<srcdir dir="src/test" />
+			{{end JUNIT}}
+			<conf name="build" />
+			{{if JUNIT}}
+			<conf name="test" />
+			{{end JUNIT}}
+			<settings>
+				<url url="http://projectlombok.org/downloads/lombok.eclipse.settings" />
+			</settings>
+		</ivy:eclipsegen>
+	</target>
+</project>
