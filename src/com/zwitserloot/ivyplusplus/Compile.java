@@ -118,6 +118,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		m.put("debug", "on");
 		m.put("target", "1.6");
 		m.put("source", "1.6");
+		m.put("includeAntRuntime", "false");
 		JAVAC_DEFAULTS = unmodifiableMap(m);
 		
 		m = new HashMap<String, String>();
