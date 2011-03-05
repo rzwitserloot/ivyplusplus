@@ -50,6 +50,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 	private Path src;
 	private boolean doCopy = true;
 	@Setter private String copyExcludes;
+	private boolean destdirSet;
 	
 	public void setCopy(boolean copy) {
 		this.doCopy = copy;
@@ -145,6 +146,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		matched |= setWithKey(javac, JAVAC_ATTR_MAP, name, value);
 		matched |= setWithKey(copy, COPY_ATTR_MAP, name, value);
 		if (!matched) throw new BuildException("Unknown property of compile task: " + name, getLocation());
+		if ("destdir".equals(name)) destdirSet = true;
 	}
 	
 	public void setSrcdir(Path srcDir) {
@@ -190,6 +192,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 	}
 	
 	public void execute() {
+		if (!destdirSet) throw new BuildException("mandatory property 'destdir' not set.");
 		if (src == null) src = new Path(getProject());
 		Map<?, ?> attributeMap = javac.getWrapper().getAttributeMap();
 		for (Map.Entry<String, String> e : JAVAC_DEFAULTS.entrySet()) {
