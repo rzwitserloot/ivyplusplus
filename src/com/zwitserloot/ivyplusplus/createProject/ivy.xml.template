@@ -12,8 +12,8 @@
 		{{if JUNIT}}
 		<dependency org="junit" name="junit" rev="4.8.2" conf="test->master" />
 		{{end JUNIT}}
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" conf="build->master; runtime->master" />
-		<dependency org="com.google.guava" name="guava" rev="r07" conf="runtime; build->runtime; contrib->sources" />
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.6.1" conf="build->default; runtime->default" />
+		<dependency org="com.google.guava" name="guava" rev="r07" conf="runtime; build->default; runtime->default; contrib->sources" />
 		<dependency org="dd" name="lombok" rev="0.9.3" conf="build" />
 	</dependencies>
 </ivy-module>
