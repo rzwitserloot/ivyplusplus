@@ -178,14 +178,14 @@
 		<echo level="info">All tests successful.</echo>
 	</target>
 	
-	<target name="test" depends="-test" description="Runs the unit tests" />
+	<target name="test" depends="-test" description="Runs the unit tests." />
 	
 	{{end JUNIT}}
 	{{if JAVADOC}}
-	<target name="javadoc" description="Generates the javadoc to doc/api">
+	<target name="javadoc" depends="compile" description="Generates the javadoc to doc/api.">
 		<delete dir="doc/api" quiet="true" />
 		<mkdir dir="doc/api" />
-		<javadoc sourcepath="src" defaultexcludes="yes" destdir="doc/api" windowtitle="{{@PROJECTNAME}}">
+		<javadoc sourcepath="src/main" defaultexcludes="yes" destdir="doc/api" windowtitle="{{@PROJECTNAME}}">
 			<classpath refid="build.path" />
 			<link href="http://java.sun.com/javase/6/docs/api/" />
 		</javadoc>
