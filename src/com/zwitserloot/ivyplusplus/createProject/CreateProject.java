@@ -92,7 +92,6 @@ public class CreateProject {
 		writeFile(template.applyResource(CreateProject.class, "build.xml.template"), "build.xml", args.force);
 		writeFile(template.applyResource(CreateProject.class, "ivy.xml.template"), "buildScripts/ivy.xml", args.force);
 		writeFile(template.applyResource(CreateProject.class, "ivysettings.xml.template"), "buildScripts/ivysettings.xml", args.force);
-		writeFile(template.applyResource(CreateProject.class, "dd-lombok-0.9.3.xml.template"), "buildScripts/ivy-repo/dd-lombok-0.9.3.xml", args.force);
 		new File("src").mkdir();
 		new File("src/main").mkdir();
 		if (args.junit) new File("src/test").mkdir();
