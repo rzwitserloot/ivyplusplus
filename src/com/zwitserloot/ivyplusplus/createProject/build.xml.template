@@ -192,11 +192,16 @@
 	</target>
 	
 	{{end JAVADOC}}
-	<target name="intellij" depends="deps" description="Creates intellij project files and downloads all dependencies. Open this directory as a project in IntelliJ after running this target.">
+	<target name="contrib" depends="config-ivy" description="Downloads various non-crucial documentation, sources, etc that are useful when developing lombok.ast.">
+		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="contrib" />
+		<ivy:retrieve />
+	</target>
+	
+	<target name="intellij" depends="deps, contrib" description="Creates intellij project files and downloads all dependencies. Open this directory as a project in IntelliJ after running this target.">
 		<ivy:intellijgen>
-			<conf name="build" />
+			<conf name="build" sources="contrib" />
 			{{if JUNIT}}
-			<conf name="test" />
+			<conf name="test" sources="contrib" />
 			{{end JUNIT}}
 			<module name="{{@PROJECTNAME}}" depends="build, test">
 				<srcdir dir="src/main" />
@@ -210,15 +215,15 @@
 		</ivy:intellijgen>
 	</target>
 	
-	<target name="eclipse" depends="deps" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
+	<target name="eclipse" depends="deps, contrib" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
 		<ivy:eclipsegen>
 			<srcdir dir="src/main" />
 			{{if JUNIT}}
 			<srcdir dir="src/test" />
 			{{end JUNIT}}
-			<conf name="build" />
+			<conf name="build" sources="contrib" />
 			{{if JUNIT}}
-			<conf name="test" />
+			<conf name="test" sources="contrib" />
 			{{end JUNIT}}
 			<settings>
 				<url url="http://projectlombok.org/downloads/lombok.eclipse.settings" />
