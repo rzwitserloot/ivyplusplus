@@ -1,5 +1,5 @@
 /**
- * Copyright © 2010 Reinier Zwitserloot.
+ * Copyright © 2010-2011 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -118,7 +118,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		m.put("debug", "on");
 		m.put("target", "1.6");
 		m.put("source", "1.6");
-		m.put("includeAntRuntime", "false");
+		m.put("includeantruntime", "false");
 		JAVAC_DEFAULTS = unmodifiableMap(m);
 		
 		m = new HashMap<String, String>();

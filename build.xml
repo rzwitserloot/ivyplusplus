@@ -1,5 +1,5 @@
 <!--
-  Copyright © 2010 Reinier Zwitserloot.
+  Copyright © 2010-2011 Reinier Zwitserloot.
   
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files (the "Software"), to deal
@@ -26,7 +26,7 @@
 	
 	<target name="version" depends="ensure-ipp" description="Shows the version number." unless="ivyplusplus.version">
 		<mkdir dir="build/lombok" />
-		<javac includeDestClasses="false" srcdir="src" debug="on" destdir="build" source="1.5" target="1.5" includes="com/zwitserloot/ivyplusplus/Version.java" />
+		<ivy:compile source="1.5" target="1.5" includeDestClasses="false" srcdir="src" destdir="build" includes="com/zwitserloot/ivyplusplus/Version.java" />
 		<java
 			classname="com.zwitserloot.ivyplusplus.Version"
 			classpath="build"
@@ -44,7 +44,7 @@
 	
 	<target name="load-ipp" depends="download-ipp">
 		<taskdef classpath="lib/ivyplusplus.jar" resource="com/zwitserloot/ivyplusplus/antlib.xml" uri="antlib:com.zwitserloot.ivyplusplus" />
-		<ivy:ensureippversion version="1.4" property="ivyplusplus.minimumAvailable" />
+		<ivy:ensureippversion version="1.5" property="ivyplusplus.minimumAvailable" />
 	</target>
 	
 	<target name="redownload-ipp" unless="ivyplusplus.minimumAvailable">
