@@ -2,27 +2,13 @@
 
 `com.zwitserloot.ivyplusplus` is a jar containing [Apache Ivy](http://ant.apache.org/ivy/) as well as a few useful constructs built on top of it.
 
-Aside from ivy itself, you get a few extra tasks built on top of it.
+Aside from ivy itself, you get a few extra tasks and a command line tool that creates a new project by filling out a skeleton build.xml and ivy configuration.
 
 ## How to use
 
-In a plain ant file, put the following at the top, and make sure any targets that use any of ivy's stuff include `depends="ensure-ipp"`:
+Run `java -jar ivyplusplus.jar --help` for more information on how to create a skeleton project.
 
-	<project name="whatever" xmlns:ivy="antlib:com.zwitserloot.ivyplusplus">
-		<property name="ivy.retrieve.pattern" value="lib/[conf]/[artifact].[ext]" />
-		<available file="lib/ivyplusplus.jar" property="ivyplusplus.available" />
-		
-		<target name="download-ipp" unless="ivyplusplus.available">
-			<mkdir dir="lib" />
-			<get src="http://projectlombok.org/downloads/ivyplusplus.jar" dest="lib/ivyplusplus.jar" usetimestamp="true" />
-		</target>
-		
-		<target name="ensure-ipp" depends="download-ipp">
-			<taskdef classpath="lib/ivyplusplus.jar" resource="com/zwitserloot/ivyplusplus/antlib.xml" uri="antlib:com.zwitserloot.ivyplusplus" />
-		</target>
-		
-		... rest of your targets, properties, etcetera go here.
-	</project>
+_Supported since ipp 1.5_
 
 For a more thorough example, just like at the build file of this very project (com.zwitserloot.ivyplusplus eats its own dog food).
 
@@ -117,7 +103,7 @@ _Supported since ipp 1.0_
 Ivy takes care of version control, but who will take care of Ivy's own version control? With this task you can
 error out (or set a property) if the cached ivyplusplus.jar is a version that's not equal to/higher than what you need.
 
-Example: `<ivy:ensureippversion version="1.4" property="ipp.minimumVersionOkay">`
+Example: `<ivy:ensureippversion version="1.5" property="ipp.minimumVersionOkay">`
 
 the `property` set in the attribute will be set if the version available is equal to or higher than the version put
 in the mandatory `version` attribute. Alternative usage is to omit `property`. In that case, a build error will occur if `version` is higher than what's available.
@@ -186,3 +172,5 @@ Inner elements:
 * `sources` - should contain filesets pointing at source files. Will be used to create a source artifact.
 
 _Supported since ipp 1.3_
+
+NB: make-maven-repo is no longer under active development since sonatype changed their policy on how maven artifacts are to be added to maven central.
