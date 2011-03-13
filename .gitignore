@@ -1,9 +1,8 @@
 .classpath
 .project
 .settings
-libertad-upload.key
+escudo-upload.key
 bin
 build
 dist
 lib
-
