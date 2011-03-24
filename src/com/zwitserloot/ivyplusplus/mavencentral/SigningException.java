@@ -1,5 +1,5 @@
 /**
- * Copyright © 2010-2011 Reinier Zwitserloot.
+ * Copyright © 2011 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -19,27 +19,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.zwitserloot.ivyplusplus;
+package com.zwitserloot.ivyplusplus.mavencentral;
 
-public class Version {
-	// ** CAREFUL ** - this class must always compile with 0 dependencies (it must not refer to any other sources or libraries).
-	private static final String VERSION = "1.6";
-	
-	private Version() {
-		//Prevent instantiation
+public class SigningException extends Exception {
+	public SigningException(String message) {
+		super(message);
 	}
 	
-	/**
-	 * Prints the version followed by a newline, and exits.
-	 */
-	public static void main(String[] args) {
-		System.out.println(VERSION);
-	}
-	
-	/**
-	 * Get the current ivyplusplus version.
-	 */
-	public static String getVersion() {
-		return VERSION;
+	public SigningException(String message, Throwable cause) {
+		super(message, cause);
 	}
 }

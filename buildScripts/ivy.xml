@@ -3,14 +3,18 @@
 	<configurations>
 		<conf name="build" />
 		<conf name="runtime" />
+		<conf name="pack" />
+		<conf name="contrib" />
 	</configurations>
 	<dependencies>
-		<dependency org="projectlombok.org" name="lombok" rev="0.9.2" conf="build" />
-		<dependency org="jcraft.com" name="jsch" rev="0.1.42" conf="build" />
-		<dependency org="projectlombok.org" name="jsch-ant-fixed" rev="0.1.42" conf="build" />
-		<dependency org="org.apache.ant" name="ant" rev="1.8.0" conf="build->master" />
-		<dependency org="org.apache.ivy" name="ivy" rev="2.1.0" conf="build->master" />
-		<dependency org="zwitserloot.com" name="cmdreader" rev="1.2" conf="build->runtime; runtime" />
-		<dependency org="dd" name="jarjar" rev="1.1" conf="build"/>
+		<dependency org="org.projectlombok" name="lombok" rev="0.9.3" conf="build->default" />
+		<dependency org="com.jcraft" name="jsch" rev="0.1.42" conf="build->default" />
+		<dependency org="org.projectlombok" name="jsch-ant-fixed" rev="0.1.42" conf="build" />
+		<dependency org="org.apache.ant" name="ant" rev="1.8.0" conf="build->master; contrib->sources" />
+		<dependency org="org.apache.ivy" name="ivy" rev="2.1.0" conf="build->master; contrib->sources" />
+		<dependency org="com.zwitserloot" name="cmdreader" rev="1.5" conf="build->default; runtime->default" />
+		<dependency org="com.googlecode.jarjar" name="jarjar" rev="1.1" conf="build->default" />
+		<dependency org="org.bouncycastle" name="bcprov-jdk16" rev="1.46" conf="build->default; pack->default" />
+		<dependency org="org.bouncycastle" name="bcpg-jdk16" rev="1.46" conf="build->default; pack->default; contrib->sources" />
 	</dependencies>
 </ivy-module>

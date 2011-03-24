@@ -21,18 +21,26 @@
  */
 package com.zwitserloot.ivyplusplus.createProject;
 
+import java.io.Console;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.Security;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.Scanner;
 
 import com.zwitserloot.cmdreader.CmdReader;
 import com.zwitserloot.cmdreader.Description;
+import com.zwitserloot.cmdreader.Excludes;
+import com.zwitserloot.cmdreader.FullName;
 import com.zwitserloot.cmdreader.InvalidCommandLineException;
 import com.zwitserloot.cmdreader.Mandatory;
 import com.zwitserloot.cmdreader.Sequential;
 import com.zwitserloot.cmdreader.Shorthand;
+import com.zwitserloot.ivyplusplus.mavencentral.CreateSigningKey;
+import com.zwitserloot.ivyplusplus.mavencentral.InitializeBouncyCastle;
+import com.zwitserloot.ivyplusplus.mavencentral.SigningException;
 import com.zwitserloot.ivyplusplus.template.TemplateApplier;
 
 public class CreateProject {
@@ -42,7 +50,7 @@ public class CreateProject {
 		boolean help;
 		
 		@Sequential
-		@Mandatory(onlyIfNot="help")
+		@Mandatory(onlyIfNot={"help", "generate-key"})
 		@Description("The name of your project. Example: com.zwitserloot.cmdreader")
 		String projectName;
 		
@@ -54,6 +62,10 @@ public class CreateProject {
 		@Description("If present, javadoc ant targets will be produced.")
 		boolean javadoc;
 		
+		@FullName("sonatype-forge")
+		@Description("Creates a 'maven-build' and 'maven-upload' task that creates (and uploads) this project to Sonatype Forge. Run --generate-key to make a signing pair first if you need one.")
+		boolean sonatypeForge;
+		
 		@Shorthand("f")
 		@Description("Overwrite files if they already exist.")
 		boolean force;
@@ -62,8 +74,13 @@ public class CreateProject {
 		@Description("This project is not an app - do not generate a main class and dont include Main-Class in the manifest.")
 		boolean library;
 		
-		@Description("Add a simple bsd-like license to the top of generated sources, using the supplied name as copyright holder")
+		@Description("Add a simple bsd-like license to the top of generated sources, using the supplied name as copyright holder.")
 		String freeware;
+		
+		@Description("Generates a key pair for signing artifacts so that i.e. Sonatype Forge, which is one way to get your libraries into maven central, accepts them.")
+		@FullName("generate-key")
+		@Excludes({"freeware", "library", "junit", "projectName", "sonatype-forge"})
+		boolean generateMavenRepoSigningKey;
 	}
 	
 	public static void main(String[] rawArgs) throws IOException {
@@ -85,13 +102,27 @@ public class CreateProject {
 			return;
 		}
 		
+		if (args.generateMavenRepoSigningKey) {
+			System.exit(runGenerateMavenSigningKey());
+			return;
+		}
+		
 		TemplateApplier template = new TemplateApplier();
 		
 		template.put("PROJECTNAME", args.projectName);
-		template.put("MIN_IPP_VERSION", "1.4");
+		template.put("MIN_IPP_VERSION", "1.6");
 		if (args.javadoc) template.put("JAVADOC", "true");
+		if (args.sonatypeForge) {
+			template.put("JAVADOC", "true");
+			template.put("MAVEN", "true");
+		}
 		if (args.junit) template.put("JUNIT", "true");
-		if (args.freeware != null) handleAndAddFreewareCopyright(template, args.freeware, args.force);
+		if (args.freeware != null) {
+			handleAndAddFreewareCopyright(template, args.freeware, args.force);
+			template.put("MIT_LICENSE_SET", "true");
+		} else {
+			template.put("MIT_LICENSE_UNSET", "true");
+		}
 		if (!args.library) template.put("APP", "true");
 		String organization, simpleName;
 		{
@@ -128,7 +159,66 @@ public class CreateProject {
 		if (!args.library) {
 			writeFile(template.applyResource(CreateProject.class, "Main.java.template"), new File(srcDir, "Main.java").getPath(), args.force);
 		}
+		if (args.sonatypeForge) {
+			File docDir = new File("doc");
+			docDir.mkdir();
+			writeFile(template.applyResource(CreateProject.class, "maven-pom.xml.template"), new File(docDir, "maven-pom.xml").getPath(), args.force);
+			System.out.println("doc/maven-pom.xml is a pom skeleton.\nYou'll need to edit it and replace all the stuff between the exclamation marks with appropriate strings.");
+		}
 		writeFile(template.applyResource(CreateProject.class, "Version.java.template"), new File(srcDir, "Version.java").getPath(), args.force);
+	}
+	
+	private static int runGenerateMavenSigningKey() {
+		try {
+			InitializeBouncyCastle.init();
+		} catch (SigningException e) {
+			System.err.println(e.getMessage());
+			return 12;
+		}
+		System.out.println(java.util.Arrays.toString(Security.getProviders()));
+		System.out.println("Generating a new key pair. The generated key pair will be used by the <ivy:create-maven-artifact> task.");
+		System.out.print("What is the full name of the owner of this key: ");
+		Scanner s = new Scanner(System.in);
+		String fullName = s.nextLine();
+		System.out.print("What is the email of the owner of this key: " );
+		String email = s.nextLine();
+		String identity = fullName + " <" + email + ">";
+		System.out.println("Key's identity: " + identity);
+		System.out.println();
+		System.out.println("Hit enter to set a blank passphrase.\n" +
+				"This means anyone with the key ring file can sign as you,\n" +
+				"so don't do this unless you know what you're doing!");
+		Console console = System.console();
+		String passphrase, verify;
+		if (console == null) {
+			System.out.print("Passphrase for this key: ");
+			passphrase = s.nextLine();
+			System.out.print("Repeat passphrase: ");
+			verify = s.nextLine();
+		} else {
+			System.out.print("Passphrase for this key: ");
+			passphrase = new String(console.readPassword());
+			System.out.print("Repeat passphrase: ");
+			verify = new String(console.readPassword());
+		}
+		if (!passphrase.equals(verify)) {
+			System.err.println("Passwords do not match - key creation aborted.");
+			return 5;
+		}
+		
+		try {
+			new CreateSigningKey().createSigningKey(identity, passphrase, System.out);
+		} catch (IOException e) {
+			System.err.println("Problem creating passkey files. Is the current directory writable?");
+			System.err.println(e);
+			return 1;
+		} catch (SigningException e) {
+			System.err.println("Problem creating keys: " + e.getMessage());
+			return 1;
+		}
+		
+		System.out.println("Key files created. You don't need mavenrepo-signing-key-public.bpr, but its there if you want others to be able to encrypt things so only you can read them.");
+		return 0;
 	}
 	
 	private static String reverseOnDots(String in) {

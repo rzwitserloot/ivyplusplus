@@ -143,17 +143,19 @@
 		</jar>
 		<copy file="dist/{{@SIMPLENAME}}-${app.version}.jar" tofile="dist/{{@SIMPLENAME}}.jar" />
 		{{if JAVADOC}}
-		<zip destfile="dist/{{@SIMPLENAME}}-javadoc-${app.version}.zip" basedir="doc/api" />
+		<jar destfile="dist/{{@SIMPLENAME}}-${app.version}-javadoc.jar" basedir="doc/api" />
+		<copy file="dist/{{@SIMPLENAME}}-${app.version}-javadoc.jar" tofile="dist/{{@SIMPLENAME}}-javadoc.jar" />
 		{{end JAVADOC}}
-		<zip destfile="dist/{{@SIMPLENAME}}-src-${app.version}.zip">
-			<zipfileset dir="." prefix="{{@SIMPLENAME}}/">
+		<jar destfile="dist/{{@SIMPLENAME}}-${app.version}-sources.jar">
+			<fileset dir=".">
 				<include name="LICENSE" />
 				<include name="README*" />
 				<include name="src/**" />
 				<include name="build.xml" />
 				<include name="buildScripts/**" />
-			</zipfileset>
-		</zip>
+			</fileset>
+		</jar>
+		<copy file="dist/{{@SIMPLENAME}}-${app.version}-sources.jar" tofile="dist/{{@SIMPLENAME}}-sources.jar" />
 	</target>
 	
 	{{if JUNIT}}
@@ -230,4 +232,24 @@
 			</settings>
 		</ivy:eclipsegen>
 	</target>
+	{{if MAVEN}}
+	
+	<target name="maven-build" depends="dist{{if JUNIT}}, test{{end JUNIT}}{{if JAVADOC}}, javadoc{{end JAVADOC}}" description="Creates an artifact bundle for upload to sonatype forge.">
+		<input message="Enter the passphrase for the maven signing key:" addproperty="maven.signing.passphrase">
+			<handler type="secure" />
+		</input>
+		
+		<ivy:create-artifact-bundle
+				version="${app.version}"
+				artifactId="{{@SIMPLENAME}}"
+				passphrase="${maven.signing.passphrase}"
+				bin="dist/{{@SIMPLENAME}}-${app.version}.jar"
+				src="dist/{{@SIMPLENAME}}-${app.version}-sources.jar"
+				javadoc="dist/{{@SIMPLENAME}}-${app.version}-javadoc.jar"
+				key="mavenrepo-signing-key-secret.bpr"
+				pom="doc/maven-pom.xml"
+				out="dist/{{@SIMPLENAME}}-${app.version}-artifact-bundle.jar"
+		/>
+	</target>
+	{{end MAVEN}}
 </project>

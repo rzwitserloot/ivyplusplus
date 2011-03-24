@@ -26,7 +26,7 @@
 	
 	<target name="version" depends="ensure-ipp" description="Shows the version number." unless="ivyplusplus.version">
 		<mkdir dir="build/lombok" />
-		<ivy:compile source="1.5" target="1.5" includeDestClasses="false" srcdir="src" destdir="build" includes="com/zwitserloot/ivyplusplus/Version.java" />
+		<ivy:compile source="1.6" target="1.6" includeDestClasses="false" srcdir="src" destdir="build" includes="com/zwitserloot/ivyplusplus/Version.java" />
 		<java
 			classname="com.zwitserloot.ivyplusplus.Version"
 			classpath="build"
@@ -66,6 +66,12 @@
 		</fileset>
 	</path>
 	
+	<path id="pack.path">
+		<fileset dir="lib/pack">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	
 	<target name="clean" description="Deletes build artefacts.">
 		<delete dir="build" quiet="true" />
 	</target>
@@ -80,19 +86,34 @@
 	
 	<target name="compile" depends="ensureBuildDeps" description="Compiles ivyplusplus">
 		<delete quiet="true" file="build/pack/com/zwitserloot/ivyplusplus/antlib.xml" />
-		<ivy:compile srcdir="src" destdir="build/pack" target="1.5" source="1.5">
+		<ivy:compile srcdir="src" destdir="build/pack" target="1.6" source="1.6">
 			<classpath refid="build.path" />
 		</ivy:compile>
 	</target>
 	
-	<target name="unpackRuntime" depends="ensureRuntimeDeps">
+	<target name="isolateBridges" depends="compile">
 		<mkdir dir="build/runtimedeps" />
-		<unjar dest="build/runtimedeps">
-			<path refid="runtime.path" />
-		</unjar>
+		<jar jarfile="build/runtimedeps/ipp-bc-bridges.jar">
+			<fileset dir="build/pack">
+				<include name="com/zwitserloot/ivyplusplus/mavencentral/CreateSigningKey_.class" />
+				<include name="com/zwitserloot/ivyplusplus/mavencentral/CreateDetachedSignatures_.class" />
+			</fileset>
+		</jar>
+		<delete file="build/pack/com/zwitserloot/ivyplusplus/mavencentral/CreateSigningKey_.class" />
+		<delete file="build/pack/com/zwitserloot/ivyplusplus/mavencentral/CreateDetachedSignatures_.class" />
 	</target>
 	
-	<target name="dist" depends="compile, version, stripeIvy, unpackRuntime" description="Creates the distributable">
+	<target name="unpackRuntime" depends="ensureRuntimeDeps, ensurePackDeps">
+		<mkdir dir="build/runtimedeps" />
+		<unjar dest="build/runtimedeps">
+			<fileset dir="lib/runtime" />
+		</unjar>
+		<copy todir="build/runtimedeps">
+			<fileset dir="lib/pack" />
+		</copy>
+	</target>
+	
+	<target name="dist" depends="isolateBridges, version, stripeIvy, unpackRuntime" description="Creates the distributable">
 		<mkdir dir="dist" />
 		<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="lib/build/jarjar.jar" />
 		<jarjar jarfile="dist/ivyplusplus-${ivyplusplus.version}.jar">
@@ -101,7 +122,7 @@
 			<rule pattern="com.zwitserloot.cmdreader.**" result="com.zwitserloot.ivyplusplus.libs.com.zwitserloot.cmdreader.@1" />
 			<manifest>
 				<attribute name="Main-Class" value="com.zwitserloot.ivyplusplus.createProject.CreateProject" />
-				<attribute name="ivyplusplus-version" value="${version}" />
+				<attribute name="ivyplusplus-version" value="${ivyplusplus.version}" />
 			</manifest>
 		</jarjar>
 		<copy file="dist/ivyplusplus-${ivyplusplus.version}.jar" tofile="dist/ivyplusplus.jar" />
@@ -131,7 +152,7 @@
 		<ivy:configure file="buildScripts/ivysettings.xml" />
 	</target>
 	
-	<target name="deps" depends="ensureBuildDeps, ensureRuntimeDeps" />
+	<target name="deps" depends="ensureBuildDeps, ensureRuntimeDeps, ensurePackDeps" />
 	
 	<target name="ensureBuildDeps" depends="config-ivy">
 		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="build" />
@@ -140,6 +161,16 @@
 	
 	<target name="ensureRuntimeDeps" depends="config-ivy">
 		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="runtime" />
+		<ivy:retrieve />
+	</target>
+	
+	<target name="ensurePackDeps" depends="config-ivy">
+		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="pack" />
+		<ivy:retrieve />
+	</target>
+	
+	<target name="contrib" depends="config-ivy" description="Downloads various non-crucial documentation, sources, etc that are useful when developing lombok.ast.">
+		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="contrib" />
 		<ivy:retrieve />
 	</target>
 	
@@ -161,7 +192,7 @@
 	</target>
 	
 	<target name="intellij" depends="deps" description="Creates intellij project files and downloads all dependencies. Open this directory as project in intellij after running this target.">
-		<ivy:intellijgen source="1.5">
+		<ivy:intellijgen source="1.6">
 			<conf name="build" />
 			<module name="ivyplusplus">
 				<srcdir dir="src" />
@@ -172,10 +203,10 @@
 		</ivy:intellijgen>
 	</target>
 	
-	<target name="eclipse" depends="deps" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
-		<ivy:eclipsegen source="1.5">
+	<target name="eclipse" depends="deps, contrib" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
+		<ivy:eclipsegen source="1.6">
 			<srcdir dir="src" />
-			<conf name="build" />
+			<conf name="build" sources="contrib" />
 			<settings>
 				<url url="http://projectlombok.org/downloads/lombok.eclipse.settings" />
 			</settings>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-     Copyright © 2010 Reinier Zwitserloot.
+     Copyright © 2010-2011 Reinier Zwitserloot.
      
      Permission is hereby granted, free of charge, to any person obtaining a copy
      of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,12 @@
 	<!-- insert here -->
 	<typedef name="eclipsegen" classname="com.zwitserloot.ivyplusplus.eclipse.BuildEclipseProject" />
 	<typedef name="intellijgen" classname="com.zwitserloot.ivyplusplus.intellij.BuildIntellijProject" />
+	<typedef name="eclipse-gen" classname="com.zwitserloot.ivyplusplus.eclipse.BuildEclipseProject" />
+	<typedef name="intellij-gen" classname="com.zwitserloot.ivyplusplus.intellij.BuildIntellijProject" />
 	<typedef name="compile" classname="com.zwitserloot.ivyplusplus.Compile" />
 	<typedef name="ensureippversion" classname="com.zwitserloot.ivyplusplus.EnsureVersion" />
+	<typedef name="ensure-ipp-version" classname="com.zwitserloot.ivyplusplus.EnsureVersion" />
+	<typedef name="create-artifact-bundle" classname="com.zwitserloot.ivyplusplus.mavencentral.CreateArtifactBundle" />
 	
 	<macrodef name="show-html" description="Shows an HTML page.">
 		<attribute name="file" />

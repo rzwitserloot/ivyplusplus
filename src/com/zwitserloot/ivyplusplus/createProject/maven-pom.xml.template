@@ -1,0 +1,43 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>{{@ORGANIZATION}}</groupId>
+	<artifactId>{{@SIMPLENAME}}</artifactId>
+	<packaging>jar</packaging>
+	<version>@VERSION@</version>
+	<name>{{@PROJECTNAME}}</name>
+	<url>!! FILL IN URL TO PROJECT SITE HERE !!</url>
+	<description>!! FILL IN DESCRIPTION HERE !!</description>
+	<dependencies></dependencies>
+	<licenses>
+		<license>
+			{{if MIT_LICENSE_SET}}
+			<name>The MIT License</name>
+			<url>!! URL TO PROJECT SITE HERE !!/LICENSE</url>
+			{{end MIT_LICENSE_SET}}
+			{{if MIT_LICENSE_UNSET}}
+			<name>!! FILL IN LICENSE NAME HERE !!</name>
+			<url>!! URL TO LICENSE HERE !!</url>
+			{{end MIT_LICENSE_UNSET}}
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<scm>
+		<connection>scm:git:git://github.com/!!git username here!!/!!gitname here!!.git</connection>
+		<url>scm:git:git://github.com/!!git username here!!/!!gitname here!!.git</url>
+	</scm>
+	<issueManagement>
+		<system>Google Code</system>
+		<url>http://code.google.com/p/!!projectname here!!/issues</url>
+	</issueManagement>
+	<developers>
+		<developer>
+			<id>!!your name!!</id>
+			<name>!!your full name!!</name>
+			<email>!!your mail!!</email>
+			<url>!!your site!!</url>
+			<timezone>!!your timestamp!!</timezone>
+		</developer>
+	</developers>
+</project>
+
