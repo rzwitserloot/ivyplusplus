@@ -122,6 +122,19 @@ The _destdir_ directory is also created automatically, so you don't have to `<mk
 
 _Supported since ipp 1.0_
 
+### `<ivy:cachedunjar>` - similar to unjar, except will not unpack jars that don't need to be unpacked.
+
+While `cachedunjar` is similar to `unjar`, it supports only file resources, either via a `source` attribute or nested `<fileset>` elements. You must specify a `dest` attribute
+just like with `unjar`. In addition, you must specify a file via the `marker` attribute. This file is used to track the state of the unpacked jars; a 'savefile' of sorts.
+
+Example:
+
+	<ivy:cachedunjar dest="build/depsToPack" marker="build/depsToPack.marker">
+		<fileset dir="lib/runtime" includes="*.jar" />
+	</ivy:cachedunjar>
+
+_Supported since ipp 1.7_
+
 ### `<ivy:show-dep-report>` - creates a dependency report, and then opens your browser to show it.
 
 The last executed `<ivy:resolve>` serves as the configuration for which a dependency report will be generated. By default `build/report` is used as target dir for

@@ -38,6 +38,7 @@ import com.zwitserloot.cmdreader.InvalidCommandLineException;
 import com.zwitserloot.cmdreader.Mandatory;
 import com.zwitserloot.cmdreader.Sequential;
 import com.zwitserloot.cmdreader.Shorthand;
+import com.zwitserloot.ivyplusplus.Version;
 import com.zwitserloot.ivyplusplus.mavencentral.CreateSigningKey;
 import com.zwitserloot.ivyplusplus.mavencentral.InitializeBouncyCastle;
 import com.zwitserloot.ivyplusplus.mavencentral.SigningException;
@@ -110,7 +111,7 @@ public class CreateProject {
 		TemplateApplier template = new TemplateApplier();
 		
 		template.put("PROJECTNAME", args.projectName);
-		template.put("MIN_IPP_VERSION", "1.6");
+		template.put("MIN_IPP_VERSION", Version.getVersion());
 		if (args.javadoc) template.put("JAVADOC", "true");
 		if (args.sonatypeForge) {
 			template.put("JAVADOC", "true");

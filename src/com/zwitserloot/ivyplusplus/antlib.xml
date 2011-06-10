@@ -30,6 +30,7 @@
 	<typedef name="ensureippversion" classname="com.zwitserloot.ivyplusplus.EnsureVersion" />
 	<typedef name="ensure-ipp-version" classname="com.zwitserloot.ivyplusplus.EnsureVersion" />
 	<typedef name="create-artifact-bundle" classname="com.zwitserloot.ivyplusplus.mavencentral.CreateArtifactBundle" />
+	<typedef name="cachedunjar" classname="com.zwitserloot.ivyplusplus.CachedUnjar" />
 	
 	<macrodef name="show-html" description="Shows an HTML page.">
 		<attribute name="file" />
