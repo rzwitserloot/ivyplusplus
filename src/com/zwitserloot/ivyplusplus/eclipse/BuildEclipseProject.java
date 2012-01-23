@@ -55,6 +55,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private List<Apt> apts = new ArrayList<Apt>();
 	@Setter private String source = "1.6";
 	@Setter private Settings settings;
+	@Setter private boolean pde = false;
 	
 	private void generateDotProject() throws IOException {
 		File f = new File(todir, ".project");
@@ -62,7 +63,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		@Cleanup
 		FileOutputStream fos = new FileOutputStream(f);
 		@Cleanup
-		InputStream in = BuildEclipseProject.class.getResourceAsStream("project.template");
+		InputStream in = BuildEclipseProject.class.getResourceAsStream(pde ? "pde_project.template" : "project.template");
 		byte[] b = new byte[4096];
 		for (int r = in.read(b); r != -1; r = in.read(b)) {
 			for (int i = 0; i < r; i++) {
@@ -187,6 +188,10 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 			} else {
 				elements.append("/>\n");
 			}
+		}
+		
+		if (pde) {
+			elements.append("\t<classpathentry exported=\"true\" kind=\"con\" path=\"org.eclipse.pde.core.requiredPlugins\"/>\n");
 		}
 		
 		elements.append("\t<classpathentry kind=\"src\" path=\".apt_generated\">\n");
