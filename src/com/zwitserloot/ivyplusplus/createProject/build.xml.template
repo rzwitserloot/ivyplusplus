@@ -120,6 +120,7 @@
 		<ivy:compile destdir="build/tests">
 			<src path="src/test" />
 			<classpath refid="test.path" />
+			<classpath refid="build.path" />
 			<classpath>
 				<pathelement path="build/main" />
 			</classpath>
@@ -167,6 +168,7 @@
 		<junit haltonfailure="yes" fork="on">
 			<formatter type="plain" usefile="false" unless="tests.quiet" />
 			<classpath refid="test.path" />
+			<classpath refid="runtime.path" />
 			<classpath>
 				<pathelement path="build/main" />
 				<pathelement path="build/tests" />
