@@ -51,7 +51,7 @@ public class CreateProject {
 		boolean help;
 		
 		@Sequential
-		@Mandatory(onlyIfNot={"help", "generate-key"})
+		@Mandatory(onlyIfNot={"help", "generate-key", "version"})
 		@Description("The name of your project. Example: com.zwitserloot.cmdreader")
 		String projectName;
 		
@@ -82,6 +82,9 @@ public class CreateProject {
 		@FullName("generate-key")
 		@Excludes({"freeware", "library", "junit", "projectName", "sonatype-forge"})
 		boolean generateMavenRepoSigningKey;
+		
+		@Description("Shows version number and exits")
+		boolean version;
 	}
 	
 	public static void main(String[] rawArgs) throws IOException {
@@ -99,6 +102,12 @@ public class CreateProject {
 		
 		if (args.help) {
 			System.out.println(reader.generateCommandLineHelp("java -jar ivyplusplus.jar"));
+			System.exit(0);
+			return;
+		}
+		
+		if (args.version) {
+			System.out.println("ivyplusplus v" + Version.getVersion());
 			System.exit(0);
 			return;
 		}
