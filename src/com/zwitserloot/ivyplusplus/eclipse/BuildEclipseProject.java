@@ -140,6 +140,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private static final Map<String, String> SOURCE_TO_CON;
 	static {
 		Map<String, String> map = new LinkedHashMap<String, String>();
+		map.put("1.7", "JavaSE-1.7");
 		map.put("1.6", "JavaSE-1.6");
 		map.put("1.5", "J2SE-1.5");
 		map.put("1.4", "J2SE-1.4");
@@ -206,7 +207,9 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 				.setConfs(confsWithSources.toArray(new String[0])).setResolveId(getResolveId()).setValidate(doValidate(getSettings())), null);
 		List<ArtifactRevisionId> handledArtifacts = new ArrayList<ArtifactRevisionId>();
 		for (IvyNode dep : deps) {
+			if (dep.isCompletelyEvicted()) continue;
 			for (Conf conf : confs) {
+				if (dep.isEvicted(conf.getName())) continue;
 				for (Artifact artifact : dep.getArtifacts(conf.getName())) {
 					if (handledArtifacts.contains(artifact.getId())) continue;
 					handledArtifacts.add(artifact.getId());

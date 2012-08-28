@@ -23,7 +23,7 @@ package com.zwitserloot.ivyplusplus;
 
 public class Version {
 	// ** CAREFUL ** - this class must always compile with 0 dependencies (it must not refer to any other sources or libraries).
-	private static final String VERSION = "1.9";
+	private static final String VERSION = "1.10";
 	
 	private Version() {
 		//Prevent instantiation

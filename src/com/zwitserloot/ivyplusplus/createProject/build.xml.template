@@ -10,7 +10,7 @@
 	</description>
 	
 	{{end DESCRIPTION}}
-	<property name="build.compiler" value="javac1.6" />
+	<property name="build.compiler" value="javac1.7" />
 	<property name="ivy.retrieve.pattern" value="lib/[conf]/[artifact].[ext]" />
 	<property name="ivyplusplus.location" value="http://projectlombok.org/downloads/ivyplusplus.jar" />
 	<available file="lib/ivyplusplus.jar" property="ivyplusplus.available" />
@@ -196,13 +196,13 @@
 	</target>
 	
 	{{end JAVADOC}}
-	<target name="contrib" depends="config-ivy" description="Downloads various non-crucial documentation, sources, etc that are useful when developing lombok.ast.">
+	<target name="contrib" depends="config-ivy" description="Downloads various non-crucial documentation, sources, etc that are useful when developing this project.">
 		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="contrib" />
 		<ivy:retrieve />
 	</target>
 	
 	<target name="intellij" depends="deps, contrib" description="Creates intellij project files and downloads all dependencies. Open this directory as a project in IntelliJ after running this target.">
-		<ivy:intellijgen>
+		<ivy:intellijgen source="1.7">
 			<conf name="build" sources="contrib" />
 			{{if JUNIT}}
 			<conf name="test" sources="contrib" />
@@ -220,7 +220,7 @@
 	</target>
 	
 	<target name="eclipse" depends="deps, contrib" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
-		<ivy:eclipsegen>
+		<ivy:eclipsegen source="1.7">
 			<srcdir dir="src/main" />
 			{{if JUNIT}}
 			<srcdir dir="src/test" />
