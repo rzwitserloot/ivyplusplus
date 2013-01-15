@@ -70,6 +70,10 @@ configurations, and if a certain artifact is in multiple configurations, only th
 
 If you have apt processors, specify them with `<apt location="path/to/processor.jar" />`.
 
+If you have separate jar files, you can specify these with `<lib location="path/to/jar.jar" />`.
+
+To set up the eclipse project so that sibling/child projects also under active development are registered as project dependencies instead of dependencies on the ivy artifacts, use `<local org="your.org" name="projname" />`; this will look for `../your.org.projname/.project` relative to the current directory, and, _only if that file exists_, it will replace any ivy dependency on the stated org/name pair (of any version!) with that project. If that file does not exist, no warning or error is generated and the normal dependency is inserted. This way, a 'fresh' clone from a source repo compiles cleanly, but you can replace any dependency with tandem development on that project by just checking it out into the same workspace and rerunning 'ant eclipse'.
+
 eclipsegen will also generate the project settings (warnings, errors, source and target compatibility, formatters, styles, etcetera) if you want, by including the `<settings>`
 element. Put eclipse settings properties inside as plain text, as well as ant resource elements. If any of the following keys aren't defined, they will be added based on
 the `source` attribute of eclipsegen:

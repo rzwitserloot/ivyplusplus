@@ -1,5 +1,5 @@
 /**
- * Copyright © 2010 Reinier Zwitserloot.
+ * Copyright © 2010-2012 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,14 +23,18 @@ package com.zwitserloot.ivyplusplus.eclipse;
 
 import static java.util.Collections.unmodifiableMap;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +57,9 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private List<Srcdir> srcdirs = new ArrayList<Srcdir>();
 	private List<Conf> confs = new ArrayList<Conf>();
 	private List<Apt> apts = new ArrayList<Apt>();
-	@Setter private String source = "1.6";
+	private List<Local> locals = new ArrayList<Local>();
+	private List<Lib> libs = new ArrayList<Lib>();
+	@Setter private String source = "1.7";
 	@Setter private Settings settings;
 	@Setter private boolean pde = false;
 	
@@ -132,6 +138,14 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		apts.add(apt);
 	}
 	
+	public void addLocal(Local local) {
+		locals.add(local);
+	}
+	
+	public void addLib(Lib lib) {
+		libs.add(lib);
+	}
+	
 	public void addSettings(Settings settings) {
 		if (this.settings != null) throw new BuildException("Only one <settings> allowed.", getLocation());
 		this.settings = settings;
@@ -162,10 +176,38 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		return out;
 	}
 	
+	private static String readProjName(File in) throws IOException {
+		@Cleanup InputStream raw = new FileInputStream(in);
+		BufferedReader br = new BufferedReader(new InputStreamReader(raw, "UTF-8"));
+		for (String line = br.readLine(); line != null; line = br.readLine()) {
+			line = line.trim();
+			if (!line.startsWith("<name")) continue;
+			int start = line.indexOf('>');
+			if (start == -1) continue;
+			int end = line.indexOf("</name>", start);
+			if (end > -1) return line.substring(start + 1, end);
+		}
+		throw new IOException("Can't find project name from " + in.getAbsolutePath());
+	}
+	
 	@Override public void doExecute() throws BuildException {
 		if (todir == null) todir = getProject().getBaseDir();
 		for (Srcdir dir : srcdirs) {
 			if (dir.getDir() == null) throw new BuildException("<srcdir> requires a 'src' attribute with the source dir you'd like to include.", getLocation());
+		}
+		
+		Map<String, String> localsToConsider = new HashMap<String, String>();
+		
+		for (Local local : locals) {
+			if (local.getName() == null) throw new BuildException("<local> requires a 'name' attribute with a name like an ivy dependency's 'name' attribute.", getLocation());
+			if (local.getOrg() == null) throw new BuildException("<local> requires an 'org' attribute with a name like an ivy dependency's 'org' attribute.", getLocation());
+			String dir = local.getDir();
+			if (dir == null) {
+				dir = "../" + local.getOrg() + "." + local.getName();
+			}
+			if (new File(dir, ".project").isFile()) {
+				localsToConsider.put(local.getOrg() + "." + local.getName(), dir);
+			}
 		}
 		
 		List<String> confsWithSources = calculateConfsWithSources();
@@ -208,8 +250,16 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		List<ArtifactRevisionId> handledArtifacts = new ArrayList<ArtifactRevisionId>();
 		for (IvyNode dep : deps) {
 			if (dep.isCompletelyEvicted()) continue;
-			for (Conf conf : confs) {
-				if (dep.isEvicted(conf.getName())) continue;
+			String localDir = localsToConsider.get(dep.getId().getOrganisation() + "." + dep.getId().getName());
+			if (localDir != null) {
+				String projName;
+				try {
+					projName = readProjName(new File(localDir, ".project"));
+				} catch (IOException e) {
+					throw new BuildException(e.getMessage());
+				}
+				elements.append("\t<classpathentry kind=\"src\" path=\"/").append(projName).append("\" combineaccessrules=\"false\"/>\n");
+			} else for (Conf conf : confs) {
 				for (Artifact artifact : dep.getArtifacts(conf.getName())) {
 					if (handledArtifacts.contains(artifact.getId())) continue;
 					handledArtifacts.add(artifact.getId());
@@ -228,6 +278,11 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 					elements.append("/>\n");
 				}
 			}
+		}
+		for (Lib lib : libs) {
+			if (lib.getLocation() == null) throw new BuildException("<lib> requires 'src' attribute pointing to a jar file.", getLocation());
+			String path = getProject().getBaseDir().toURI().relativize(lib.getLocation().toURI()).toString();
+			elements.append("\t<classpathentry kind=\"lib\" path=\"").append(path).append("\"/>\n");
 		}
 		elements.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/")
 		.append(SOURCE_TO_CON.get(source)).append("\"/>\n");
