@@ -167,7 +167,6 @@ public class CachedUnjar extends MatchingTask {
 			Expand ex = new Expand();
 			ex.setDest(dest);
 			ex.setSrc(res);
-			ex.setStripAbsolutePathSpec(true);
 			ex.setTaskName("cachingunjar");
 			ex.setTaskType("unjar");
 			ex.execute();

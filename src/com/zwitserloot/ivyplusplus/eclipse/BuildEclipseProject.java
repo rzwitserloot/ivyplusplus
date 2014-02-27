@@ -1,5 +1,5 @@
 /**
- * Copyright © 2010-2012 Reinier Zwitserloot.
+ * Copyright © 2010-2014 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -58,6 +58,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private List<Conf> confs = new ArrayList<Conf>();
 	private List<Apt> apts = new ArrayList<Apt>();
 	private List<Local> locals = new ArrayList<Local>();
+	private List<Export> exports = new ArrayList<Export>();
 	private List<Lib> libs = new ArrayList<Lib>();
 	@Setter private String source = "1.7";
 	@Setter private Settings settings;
@@ -142,6 +143,10 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		locals.add(local);
 	}
 	
+	public void addExport(Export export) {
+		exports.add(export);
+	}
+	
 	public void addLib(Lib lib) {
 		libs.add(lib);
 	}
@@ -197,6 +202,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		}
 		
 		Map<String, String> localsToConsider = new HashMap<String, String>();
+		List<String> toExport = new ArrayList<String>();
 		
 		for (Local local : locals) {
 			if (local.getName() == null) throw new BuildException("<local> requires a 'name' attribute with a name like an ivy dependency's 'name' attribute.", getLocation());
@@ -208,6 +214,12 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 			if (new File(dir, ".project").isFile()) {
 				localsToConsider.put(local.getOrg() + "." + local.getName(), dir);
 			}
+		}
+		
+		for (Export export : exports) {
+			if (export.getName() == null) throw new BuildException("<export> requires a 'name' attribute with a name like an ivy dependency's 'name' attribute.", getLocation());
+			if (export.getOrg() == null) throw new BuildException("<export> requires an 'org' attribute with a name like an ivy dependency's 'org' attribute.", getLocation());
+			toExport.add(export.getOrg() + "." + export.getName());
 		}
 		
 		List<String> confsWithSources = calculateConfsWithSources();
@@ -250,6 +262,8 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		List<ArtifactRevisionId> handledArtifacts = new ArrayList<ArtifactRevisionId>();
 		for (IvyNode dep : deps) {
 			if (dep.isCompletelyEvicted()) continue;
+			boolean export = toExport.contains(dep.getId().getOrganisation() + "." + dep.getId().getName());
+			String exportString = export ? "exported=\"true\" " : "";
 			String localDir = localsToConsider.get(dep.getId().getOrganisation() + "." + dep.getId().getName());
 			if (localDir != null) {
 				String projName;
@@ -258,7 +272,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 				} catch (IOException e) {
 					throw new BuildException(e.getMessage());
 				}
-				elements.append("\t<classpathentry kind=\"src\" path=\"/").append(projName).append("\" combineaccessrules=\"false\"/>\n");
+				elements.append("\t<classpathentry " + exportString + "kind=\"src\" path=\"/").append(projName).append("\" combineaccessrules=\"false\"/>\n");
 			} else for (Conf conf : confs) {
 				for (Artifact artifact : dep.getArtifacts(conf.getName())) {
 					if (handledArtifacts.contains(artifact.getId())) continue;
@@ -271,7 +285,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 						sourceAttachment = IvyPatternHelper.substitute(retrievePattern, sourceArtifact.getModuleRevisionId(), sourceArtifact, sourceConf, null);
 						break;
 					}
-					elements.append("\t<classpathentry kind=\"lib\" path=\"").append(destFileName).append("\"");
+					elements.append("\t<classpathentry " + exportString + "kind=\"lib\" path=\"").append(destFileName).append("\"");
 					if (sourceAttachment != null) {
 						elements.append(" sourcepath=\"").append(sourceAttachment).append("\"");
 					}
@@ -281,8 +295,9 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		}
 		for (Lib lib : libs) {
 			if (lib.getLocation() == null) throw new BuildException("<lib> requires 'src' attribute pointing to a jar file.", getLocation());
+			String exportString = lib.export ? "exported=\"true\" " : "";
 			String path = getProject().getBaseDir().toURI().relativize(lib.getLocation().toURI()).toString();
-			elements.append("\t<classpathentry kind=\"lib\" path=\"").append(path).append("\"/>\n");
+			elements.append("\t<classpathentry " + exportString + "kind=\"lib\" path=\"").append(path).append("\"/>\n");
 		}
 		elements.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/")
 		.append(SOURCE_TO_CON.get(source)).append("\"/>\n");
