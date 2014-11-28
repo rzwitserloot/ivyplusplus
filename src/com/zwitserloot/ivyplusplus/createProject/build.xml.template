@@ -10,8 +10,8 @@
 	</description>
 	
 	{{end DESCRIPTION}}
-	<property name="build.compiler" value="javac1.7" />
-	<property name="ivy.retrieve.pattern" value="lib/[conf]/[artifact].[ext]" />
+	<property name="build.compiler" value="javac1.8" />
+	<property name="ivy.retrieve.pattern" value="lib/[conf]/[organisation]-[artifact].[ext]" />
 	<property name="ivyplusplus.location" value="http://projectlombok.org/downloads/ivyplusplus.jar" />
 	<available file="lib/ivyplusplus.jar" property="ivyplusplus.available" />
 	
@@ -58,7 +58,7 @@
 	</target>
 	
 	<target name="version" depends="ensure-ipp" description="Shows the version number." unless="app.version">
-		<ivy:compile includeDestClasses="false" srcdir="src/main" destdir="build/main" includes="{{@PATH_TO_VERSIONJAVA}}" />
+		<ivy:compile source="1.8" target="1.8" includeDestClasses="false" srcdir="src/main" destdir="build/main" includes="{{@PATH_TO_VERSIONJAVA}}" />
 		<java
 			classname="{{@PROJECTNAME}}.Version"
 			classpath="build/main"
@@ -202,7 +202,7 @@
 	</target>
 	
 	<target name="intellij" depends="deps, contrib" description="Creates intellij project files and downloads all dependencies. Open this directory as a project in IntelliJ after running this target.">
-		<ivy:intellijgen source="1.7">
+		<ivy:intellijgen source="1.8">
 			<conf name="build" sources="contrib" />
 			{{if JUNIT}}
 			<conf name="test" sources="contrib" />
@@ -220,7 +220,7 @@
 	</target>
 	
 	<target name="eclipse" depends="deps, contrib" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
-		<ivy:eclipsegen source="1.7">
+		<ivy:eclipsegen source="1.8">
 			<srcdir dir="src/main" />
 			{{if JUNIT}}
 			<srcdir dir="src/test" />

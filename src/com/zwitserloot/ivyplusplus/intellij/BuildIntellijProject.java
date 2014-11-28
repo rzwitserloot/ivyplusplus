@@ -47,7 +47,7 @@ public class BuildIntellijProject extends IvyPostResolveTask {
 	private List<Module> modules = new ArrayList<Module>();
 	private List<Conf> confs = new ArrayList<Conf>();
 	private Apt apt;
-	@Setter private String source = "1.6";
+	@Setter private String source = "1.8";
 	@Setter private Settings settings;
 	
 	public void addConf(Conf conf) {

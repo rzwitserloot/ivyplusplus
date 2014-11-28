@@ -89,6 +89,7 @@ public class Settings {
 		boolean is5 = "1.5".equals(source);
 		boolean is6 = "1.6".equals(source);
 		boolean is7 = "1.7".equals(source);
+		boolean is8 = "1.8".equals(source);
 		
 		todir = new File(todir, ".settings");
 		
@@ -116,19 +117,19 @@ public class Settings {
 		
 		if (!properties.containsKey("org.eclipse.jdt.core.compiler.processAnnotations")) {
 			if (is5) properties.put("org.eclipse.jdt.core.compiler.processAnnotations", "disabled");
-			if (is6 || is7) properties.put("org.eclipse.jdt.core.compiler.processAnnotations", "enabled");
+			if (is6 || is7 || is8) properties.put("org.eclipse.jdt.core.compiler.processAnnotations", "enabled");
 		}
 		
 		if (!properties.containsKey("org.eclipse.jdt.core.compiler.source")) {
-			if (is5 || is6 || is7) properties.put("org.eclipse.jdt.core.compiler.source", source);
+			if (is5 || is6 || is7 || is8) properties.put("org.eclipse.jdt.core.compiler.source", source);
 		}
 		
 		if (!properties.containsKey("org.eclipse.jdt.core.compiler.compliance")) {
-			if (is5 || is6 || is7) properties.put("org.eclipse.jdt.core.compiler.compliance", source);
+			if (is5 || is6 || is7 || is8) properties.put("org.eclipse.jdt.core.compiler.compliance", source);
 		}
 		
 		if (!properties.containsKey("org.eclipse.jdt.core.compiler.codegen.targetPlatform")) {
-			if (is5 || is6 || is7) properties.put("org.eclipse.jdt.core.compiler.codegen.targetPlatform", source);
+			if (is5 || is6 || is7 || is8) properties.put("org.eclipse.jdt.core.compiler.codegen.targetPlatform", source);
 		}
 		
 		try {

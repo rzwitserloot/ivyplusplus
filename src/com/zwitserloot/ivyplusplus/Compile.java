@@ -116,8 +116,8 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		m = new HashMap<String, String>();
 		m.put("encoding", "UTF-8");
 		m.put("debug", "on");
-		m.put("target", "1.6");
-		m.put("source", "1.6");
+		m.put("target", "1.8");
+		m.put("source", "1.8");
 		m.put("includeantruntime", "false");
 		JAVAC_DEFAULTS = unmodifiableMap(m);
 		

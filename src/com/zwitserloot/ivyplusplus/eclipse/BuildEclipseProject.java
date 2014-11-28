@@ -60,7 +60,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private List<Local> locals = new ArrayList<Local>();
 	private List<Export> exports = new ArrayList<Export>();
 	private List<Lib> libs = new ArrayList<Lib>();
-	@Setter private String source = "1.7";
+	@Setter private String source = "1.8";
 	@Setter private Settings settings;
 	@Setter private boolean pde = false;
 	
@@ -159,6 +159,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private static final Map<String, String> SOURCE_TO_CON;
 	static {
 		Map<String, String> map = new LinkedHashMap<String, String>();
+		map.put("1.8", "JavaSE-1.8");
 		map.put("1.7", "JavaSE-1.7");
 		map.put("1.6", "JavaSE-1.6");
 		map.put("1.5", "J2SE-1.5");
