@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -41,6 +40,7 @@ import java.util.Map;
 
 import lombok.Cleanup;
 import lombok.Setter;
+import lombok.Value;
 
 import org.apache.ivy.ant.IvyPostResolveTask;
 import org.apache.ivy.core.IvyPatternHelper;
@@ -50,6 +50,7 @@ import org.apache.ivy.core.module.id.ArtifactRevisionId;
 import org.apache.ivy.core.resolve.IvyNode;
 import org.apache.ivy.core.resolve.ResolveOptions;
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Project;
 
 public class BuildEclipseProject extends IvyPostResolveTask {
 	@Setter private File todir = null;
@@ -58,6 +59,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private List<Conf> confs = new ArrayList<Conf>();
 	private List<Apt> apts = new ArrayList<Apt>();
 	private List<Local> locals = new ArrayList<Local>();
+	private List<Projectdep> projectdeps = new ArrayList<Projectdep>();
 	private List<Export> exports = new ArrayList<Export>();
 	private List<Lib> libs = new ArrayList<Lib>();
 	@Setter private String source = "1.8";
@@ -97,26 +99,107 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		@Cleanup Writer out = new OutputStreamWriter(fos, "UTF-8");
 		out.write("<factorypath>\n");
 		for (Apt apt : apts) {
-			String loc = apt.getLocation();
-			if (loc == null) throw new BuildException("'location' attribute is required on <apt>", getLocation());
-			File abs = getProject().resolveFile(loc);
-			File workspace = todir == null ? getProject().getBaseDir() : todir;
-			URI rel = workspace.toURI().relativize(abs.toURI());
+			EclipsePath ep = eclipsify(todir, apt.getLocation(), true);
+			if (ep == null) throw new BuildException("'location' attribute is required on <apt>", getLocation());
 			out.write("\t<factorypathentry kind=\"");
-			out.write(rel.isAbsolute() ? "EXTJAR" : "WKSPJAR");
+			out.write(ep.isExternal() ? "EXTJAR" : "WKSPJAR");
 			out.write("\" id=\"");
-			out.write(rel.isAbsolute() ? unixize(abs.getPath()) : "/" + projectname + "/" + unixize(rel.toString()));
+			out.write(ep.getPath());
 			out.write("\" enabled=\"true\" runInBatch=\"false\"/>\n");
 		}
 		out.write("</factorypath>\n");
 		out.close();
 	}
 	
-	private static String unixize(String path) {
-		if (File.separatorChar == '/') return path;
-		return path.replace(File.separator, "/");
+	@Value
+	private static class EclipsePath {
+		boolean external;
+		String path;
+		
+		@Override public String toString() {
+			return path;
+		}
 	}
 	
+	private EclipsePath eclipsify(File base, String loc, boolean forceProject) {
+		if (loc == null) return null;
+		return eclipsify(base, new File(loc), forceProject);
+	}
+	
+	private EclipsePath eclipsify(File base, File loc, boolean forceProject) {
+		if (loc == null) return null;
+		
+		/* Check if the folder shared by baseUri and locUri is the direct parent AND the next dir for locUri is an eclipse project.
+		 * If that is the case, go project relative (assume that project is also in the workspace). */ {
+			int lastSlash = -1;
+			String b = canonical(base);
+			String c = canonical(loc);
+			
+			int min = Math.min(b.length(), c.length());
+			int i = 0;
+			for (; i < min; i++) {
+				char bc = b.charAt(i);
+				char cc = c.charAt(i);
+				if (bc != cc) break;
+				if (bc == '/') lastSlash = i;
+			}
+			
+			if (i == b.length() && c.length() > i && c.charAt(i) == '/') {
+				return new EclipsePath(false, c.substring(i + 1));
+			}
+			
+			int lastSlashInBase = b.indexOf('/', lastSlash + 1);
+			if (lastSlashInBase == -1 || lastSlashInBase == b.length() - 1) {
+				// This means the shared root is indeed the direct parent of base.
+				// Next requirement: the first subdir after this in 'loc' must be an eclipse project.
+				String siblingProjectName = fetchSiblingProjectName(c, lastSlash);
+				if (siblingProjectName != null) {
+					int nextSlashInLoc = c.indexOf('/', lastSlash + 1);
+					if (nextSlashInLoc != -1) {
+						return new EclipsePath(false, "/" + siblingProjectName + "/" + c.substring(nextSlashInLoc + 1));
+					}
+				}
+			}
+		}
+		
+		/* Give up, going with an absolute path. */ {
+			return new EclipsePath(true, canonical(loc));
+		}
+	}
+	
+	private String fetchSiblingProjectName(String resourcePath, int workspaceRootPos) {
+		int nextSlashInLoc = resourcePath.indexOf('/', workspaceRootPos + 1);
+		if (nextSlashInLoc == -1) return null;
+		File siblingProj = new File(resourcePath.substring(0, nextSlashInLoc), ".project");
+		if (!siblingProj.isFile()) return null;
+		try {
+			return readProjName(siblingProj, true);
+		} catch (IOException e) {
+			warnAboutEclipseProjectReadFailure(false, siblingProj);
+			return null;
+		}
+	}
+	
+	private final List<String> alreadyWarnedForEclipseProjectReadFailure = new ArrayList<String>();
+	private String warnAboutEclipseProjectReadFailure(boolean error, File resourceFile) {
+		String resourcePath = canonical(resourceFile);
+		if (error) throw new BuildException("Cannot parse eclipse project file: " + resourcePath);
+		
+		if (alreadyWarnedForEclipseProjectReadFailure.contains(resourcePath)) return null;
+		alreadyWarnedForEclipseProjectReadFailure.add(resourcePath);
+		
+		getProject().log("Can't read eclispe project file: " + resourcePath, Project.MSG_WARN);
+		return null;
+	}
+	
+	private String canonical(File f) {
+		try {
+			return f.getCanonicalPath();
+		} catch (IOException e) {
+			return f.getAbsolutePath();
+		}
+	}
+
 	private void generateDotClasspath(String content) throws IOException {
 		File f = new File(todir, ".classpath");
 		f.delete();
@@ -141,6 +224,10 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	
 	public void addLocal(Local local) {
 		locals.add(local);
+	}
+	
+	public void addProjectdep(Projectdep projectdep) {
+		projectdeps.add(projectdep);
 	}
 	
 	public void addExport(Export export) {
@@ -182,18 +269,46 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		return out;
 	}
 	
-	private static String readProjName(File in) throws IOException {
-		@Cleanup InputStream raw = new FileInputStream(in);
-		BufferedReader br = new BufferedReader(new InputStreamReader(raw, "UTF-8"));
-		for (String line = br.readLine(); line != null; line = br.readLine()) {
-			line = line.trim();
-			if (!line.startsWith("<name")) continue;
-			int start = line.indexOf('>');
-			if (start == -1) continue;
-			int end = line.indexOf("</name>", start);
-			if (end > -1) return line.substring(start + 1, end);
+	private String readProjName(File in, boolean error) throws IOException {
+		FileInputStream fis = new FileInputStream(in);
+		try {
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis, "UTF-8"));
+			List<String> stack = new ArrayList<String>();
+			while (true) {
+				String line = br.readLine();
+				if (line == null) return null;
+				line = line.trim();
+				if (!line.startsWith("<")) return warnAboutEclipseProjectReadFailure(error, in);
+				int idx = line.indexOf('>');
+				if (idx == -1) return warnAboutEclipseProjectReadFailure(error, in);
+				if (line.length() > 4 && line.charAt(1) == '?' && line.charAt(line.length() - 2) == '?' && line.charAt(line.length() -1) == '>') continue;
+				String tag = line.substring(1, idx);
+				
+				if (tag.startsWith("/")) {
+					if (stack.size() == 0) return warnAboutEclipseProjectReadFailure(error, in);
+					if (!stack.get(stack.size() - 1).equals(tag)) return warnAboutEclipseProjectReadFailure(error, in);
+					stack.remove(stack.size() - 1);
+					continue;
+				}
+				
+				if (idx == line.length() - 1) {
+					stack.add(tag);
+					continue;
+				}
+				
+				if (line.endsWith("</" + tag + ">")) {
+					String text = line.substring(idx + 1, line.length() - 3 - tag.length());
+					if (text.indexOf('<') != -1 || text.indexOf('>') != -1) return warnAboutEclipseProjectReadFailure(error, in);
+					if (!tag.equals("name")) continue;
+					if (stack.size() == 1 && stack.get(0).equals("projectDescription")) return text;
+					continue;
+				}
+				
+				return warnAboutEclipseProjectReadFailure(error, in);
+			}
+		} finally {
+			fis.close();
 		}
-		throw new IOException("Can't find project name from " + in.getAbsolutePath());
 	}
 	
 	@Override public void doExecute() throws BuildException {
@@ -237,7 +352,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		elements.append("<classpath>\n");
 		
 		for (Srcdir dir : srcdirs) {
-			String path = getProject().getBaseDir().toURI().relativize(dir.getDir().toURI()).toString();
+			String path = todir.toURI().relativize(dir.getDir().toURI()).toString();
 			elements.append("\t<classpathentry kind=\"src\" path=\"").append(path).append("\"");
 			if (dir.isOptional()) {
 				elements.append(">\n\t\t<attributes>\n\t\t\t<attribute name=\"optional\" value=\"true\"/>\n\t\t</attributes>\n\t</classpathentry>\n");
@@ -254,6 +369,10 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		elements.append("\t\t<attributes>\n\t\t\t<attribute name=\"optional\" value=\"true\"/>\n\t\t</attributes>\n");
 		elements.append("\t</classpathentry>\n");
 		
+		for (Projectdep pd : projectdeps) {
+			elements.append("\t<classpathentry kind=\"src\" path=\"/").append(pd.getName()).append("\" combineaccessrules=\"false\"/>\n");
+		}
+		
 		ModuleDescriptor md = null;
 		if (getResolveId() != null) md = (ModuleDescriptor) getResolvedDescriptor(getResolveId());
 		else md = (ModuleDescriptor) getResolvedDescriptor(getOrganisation(), getModule(), false);
@@ -269,7 +388,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 			if (localDir != null) {
 				String projName;
 				try {
-					projName = readProjName(new File(localDir, ".project"));
+					projName = readProjName(new File(localDir, ".project"), true);
 				} catch (IOException e) {
 					throw new BuildException(e.getMessage());
 				}
@@ -286,9 +405,12 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 						sourceAttachment = IvyPatternHelper.substitute(retrievePattern, sourceArtifact.getModuleRevisionId(), sourceArtifact, sourceConf, null);
 						break;
 					}
-					elements.append("\t<classpathentry " + exportString + "kind=\"lib\" path=\"").append(destFileName).append("\"");
-					if (sourceAttachment != null) {
-						elements.append(" sourcepath=\"").append(sourceAttachment).append("\"");
+					
+					EclipsePath libPath = eclipsify(todir, destFileName, false);
+					EclipsePath relSrcAtt = eclipsify(todir, sourceAttachment, false);
+					elements.append("\t<classpathentry " + exportString + "kind=\"lib\" path=\"").append(libPath.getPath()).append("\"");
+					if (relSrcAtt != null) {
+						elements.append(" sourcepath=\"").append(relSrcAtt.getPath()).append("\"");
 					}
 					elements.append("/>\n");
 				}
@@ -297,8 +419,8 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		for (Lib lib : libs) {
 			if (lib.getLocation() == null) throw new BuildException("<lib> requires 'src' attribute pointing to a jar file.", getLocation());
 			String exportString = lib.export ? "exported=\"true\" " : "";
-			String path = getProject().getBaseDir().toURI().relativize(lib.getLocation().toURI()).toString();
-			elements.append("\t<classpathentry " + exportString + "kind=\"lib\" path=\"").append(path).append("\"/>\n");
+			EclipsePath path = eclipsify(todir, lib.getLocation(), false);
+			elements.append("\t<classpathentry " + exportString + "kind=\"lib\" path=\"").append(path.getPath()).append("\"/>\n");
 		}
 		elements.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/")
 		.append(SOURCE_TO_CON.get(source)).append("\"/>\n");

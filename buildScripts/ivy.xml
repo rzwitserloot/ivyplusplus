@@ -7,7 +7,7 @@
 		<conf name="contrib" />
 	</configurations>
 	<dependencies>
-		<dependency org="org.projectlombok" name="lombok" rev="0.11.6" conf="build->default" />
+		<dependency org="org.projectlombok" name="lombok" rev="1.16.4" conf="build->default" />
 		<dependency org="com.jcraft" name="jsch" rev="0.1.42" conf="build->default" />
 		<dependency org="org.projectlombok" name="jsch-ant-fixed" rev="0.1.42" conf="build" />
 		<dependency org="org.apache.ant" name="ant" rev="1.8.0" conf="build->master; contrib->sources" />
