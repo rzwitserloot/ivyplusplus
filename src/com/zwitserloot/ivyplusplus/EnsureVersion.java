@@ -25,16 +25,28 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 
 public class EnsureVersion extends Task {
-	@Getter @Setter private String version;
-	@Getter @Setter private String property;
+	private String version;
+	private String property;
+	
+	public String getVersion() {
+		return version;
+	}
+	
+	public void setVersion(String version) {
+		this.version = version;
+	}
+	
+	public String getProperty() {
+		return property;
+	}
+	
+	public void setProperty(String property) {
+		this.property = property;
+	}
 	
 	@Override public void execute() throws BuildException {
 		if (version == null || version.isEmpty()) throw new BuildException("Must specify mandatory attribute 'version'", getLocation());
@@ -74,10 +86,34 @@ public class EnsureVersion extends Task {
 		return true;
 	}
 	
-	@Data
 	private static class VersionPart implements Comparable<VersionPart> {
 		private final int number;
 		private final String name;
+		
+		public VersionPart(int number, String name) {
+			this.number = number;
+			this.name = name;
+		}
+		
+		@Override public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((name == null) ? 0 : name.hashCode());
+			result = prime * result + number;
+			return result;
+		}
+		
+		@Override public boolean equals(Object obj) {
+			if (this == obj) return true;
+			if (obj == null) return false;
+			if (getClass() != obj.getClass()) return false;
+			VersionPart other = (VersionPart) obj;
+			if (name == null) {
+				if (other.name != null) return false;
+			} else if (!name.equals(other.name)) return false;
+			if (number != other.number) return false;
+			return true;
+		}
 		
 		public int compareTo(VersionPart o) {
 			if (o.name == null) {

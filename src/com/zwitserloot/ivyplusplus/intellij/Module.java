@@ -24,17 +24,33 @@ package com.zwitserloot.ivyplusplus.intellij;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Location;
 
 public class Module {
-	@Getter(AccessLevel.PACKAGE) private List<Srcdir> srcdirs = new ArrayList<Srcdir>();
-	@Getter @Setter private String name;
-	@Getter @Setter private String depends;
+	private List<Srcdir> srcdirs = new ArrayList<Srcdir>();
+	private String name;
+	private String depends;
+	
+	List<Srcdir> getSrcdirs() {
+		return srcdirs;
+	}
+	
+	public String getName() {
+		return name;
+	}
+	
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	public String getDepends() {
+		return depends;
+	}
+	
+	public void setDepends(String depends) {
+		this.depends = depends;
+	}
 	
 	public void addSrcdir(Srcdir srcdir) {
 		srcdirs.add(srcdir);

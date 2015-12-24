@@ -23,10 +23,47 @@ package com.zwitserloot.ivyplusplus.intellij;
 
 import java.io.File;
 
-import lombok.Data;
-
-@Data
 public class Srcdir {
 	private File dir;
 	private boolean test = false;
+	
+	public File getDir() {
+		return dir;
+	}
+	
+	public void setDir(File dir) {
+		this.dir = dir;
+	}
+	
+	public boolean isTest() {
+		return test;
+	}
+	
+	public void setTest(boolean test) {
+		this.test = test;
+	}
+	
+	@Override public String toString() {
+		return "Srcdir [dir=" + dir + ", test=" + test + "]";
+	}
+	
+	@Override public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((dir == null) ? 0 : dir.hashCode());
+		result = prime * result + (test ? 1231 : 1237);
+		return result;
+	}
+	
+	@Override public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		Srcdir other = (Srcdir) obj;
+		if (dir == null) {
+			if (other.dir != null) return false;
+		} else if (!dir.equals(other.dir)) return false;
+		if (test != other.test) return false;
+		return true;
+	}
 }

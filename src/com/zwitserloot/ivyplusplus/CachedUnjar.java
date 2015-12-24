@@ -35,9 +35,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import lombok.Cleanup;
-import lombok.Data;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Delete;
@@ -174,29 +171,68 @@ public class CachedUnjar extends MatchingTask {
 	}
 	
 	private void saveCache(Collection<CacheRecord> crs) throws IOException {
-		@Cleanup FileOutputStream fos = new FileOutputStream(marker);
-		for (CacheRecord cr : crs) fos.write(cr.write().getBytes("UTF-8"));
+		FileOutputStream fos = new FileOutputStream(marker);
+		try {
+			for (CacheRecord cr : crs) fos.write(cr.write().getBytes("UTF-8"));
+		} finally {
+			fos.close();
+		}
 	}
 	
 	private static Set<CacheRecord> readCaches(File marker) throws IOException {
 		Set<CacheRecord> out = new LinkedHashSet<CacheRecord>();
 		try {
-			@Cleanup FileInputStream fis = new FileInputStream(marker);
-			BufferedReader br = new BufferedReader(new InputStreamReader(fis, "UTF-8"));
-			for (String line = br.readLine(); line != null; line = br.readLine()) {
-				line = line.trim();
-				if (line.startsWith("#")) continue;
-				if (line.length() == 0) continue;
-				out.add(CacheRecord.read(line));
+			FileInputStream fis = new FileInputStream(marker);
+			try {
+				BufferedReader br = new BufferedReader(new InputStreamReader(fis, "UTF-8"));
+				for (String line = br.readLine(); line != null; line = br.readLine()) {
+					line = line.trim();
+					if (line.startsWith("#")) continue;
+					if (line.length() == 0) continue;
+					out.add(CacheRecord.read(line));
+				}
+			} finally {
+				fis.close();
 			}
 		} catch (FileNotFoundException e) {}
 		return out;
 	}
 	
-	@Data
 	private static class CacheRecord {
 		private final String name;
 		private final long lastMod, len;
+		
+		public CacheRecord(String name, long lastMod, long len) {
+			this.name = name;
+			this.lastMod = lastMod;
+			this.len = len;
+		}
+		
+		@Override public String toString() {
+			return name + "[lastMod = " + lastMod + ", len = " + len + "]";
+		}
+		
+		@Override public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (int) (lastMod ^ (lastMod >>> 32));
+			result = prime * result + (int) (len ^ (len >>> 32));
+			result = prime * result + ((name == null) ? 0 : name.hashCode());
+			return result;
+		}
+		
+		@Override public boolean equals(Object obj) {
+			if (this == obj) return true;
+			if (obj == null) return false;
+			if (getClass() != obj.getClass()) return false;
+			CacheRecord other = (CacheRecord) obj;
+			if (lastMod != other.lastMod) return false;
+			if (len != other.len) return false;
+			if (name == null) {
+				if (other.name != null) return false;
+			} else if (!name.equals(other.name)) return false;
+			return true;
+		}
 		
 		static CacheRecord read(String line) {
 			String[] elems = line.split(" ::: ", 3);

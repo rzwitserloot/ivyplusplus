@@ -44,8 +44,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import lombok.Cleanup;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Location;
 import org.apache.tools.ant.types.Resource;
@@ -122,7 +120,7 @@ public class Settings {
 			if (input instanceof String) {
 				if (!((String)input).trim().isEmpty()) {
 					try {
-						@Cleanup InputStream in = new ByteArrayInputStream(((String) input).getBytes("ISO-8859-1"));
+						InputStream in = new ByteArrayInputStream(((String) input).getBytes("ISO-8859-1"));
 						loadXML(in, true);
 					} catch (IOException e) {
 						throw new BuildException(e, location);
@@ -130,8 +128,12 @@ public class Settings {
 				}
 			} else if (input instanceof Resource) {
 				try {
-					@Cleanup InputStream in = ((Resource) input).getInputStream();
-					loadXML(in, false);
+					InputStream in = ((Resource) input).getInputStream();
+					try {
+						loadXML(in, false);
+					} finally {
+						if (in != null) in.close();
+					}
 				} catch (IOException e) {
 					throw new BuildException(e, location);
 				}

@@ -21,10 +21,49 @@
  */
 package com.zwitserloot.ivyplusplus.eclipse;
 
-import lombok.Data;
-
-@Data
 public class Conf {
 	private String name;
 	private String sources;
+	
+	public String getName() {
+		return name;
+	}
+	
+	public void setName(String name) {
+		this.name = name;
+	}
+	
+	public String getSources() {
+		return sources;
+	}
+	
+	public void setSources(String sources) {
+		this.sources = sources;
+	}
+	
+	@Override public String toString() {
+		return "Conf [name=" + name + ", sources=" + sources + "]";
+	}
+	
+	@Override public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((sources == null) ? 0 : sources.hashCode());
+		return result;
+	}
+	
+	@Override public boolean equals(Object obj) {
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		Conf other = (Conf) obj;
+		if (name == null) {
+			if (other.name != null) return false;
+		} else if (!name.equals(other.name)) return false;
+		if (sources == null) {
+			if (other.sources != null) return false;
+		} else if (!sources.equals(other.sources)) return false;
+		return true;
+	}
 }

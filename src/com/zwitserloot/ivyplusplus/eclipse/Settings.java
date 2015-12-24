@@ -36,8 +36,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
-import lombok.Cleanup;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Location;
 import org.apache.tools.ant.types.Resource;
@@ -98,15 +96,19 @@ public class Settings {
 			if (input == null) continue;
 			if (input instanceof String) {
 				try {
-					@Cleanup InputStream in = new ByteArrayInputStream(((String) input).getBytes("ISO-8859-1"));
+					InputStream in = new ByteArrayInputStream(((String) input).getBytes("ISO-8859-1"));
 					loadProps(in, true);
 				} catch (IOException e) {
 					throw new BuildException(e, location);
 				}
 			} else if (input instanceof Resource) {
 				try {
-					@Cleanup InputStream in = ((Resource) input).getInputStream();
-					loadProps(in, false);
+					InputStream in = ((Resource) input).getInputStream();
+					try {
+						loadProps(in, false);
+					} finally {
+						if (in != null) in.close();
+					}
 				} catch (IOException e) {
 					throw new BuildException(e, location);
 				}

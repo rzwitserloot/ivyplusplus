@@ -33,17 +33,53 @@ import java.io.OutputStream;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 
-import lombok.Cleanup;
-import lombok.Setter;
-import lombok.SneakyThrows;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Task;
 
 public class CreateArtifactBundle extends Task {
-	@Setter private File src, bin, javadoc, pom, key, out;
-	@Setter private String version, artifactId, passphrase;
-	@Setter private boolean noSourceOrJavadocNeeded;
+	private File src, bin, javadoc, pom, key, out;
+	private String version, artifactId, passphrase;
+	private boolean noSourceOrJavadocNeeded;
+	
+	public void setSrc(File src) {
+		this.src = src;
+	}
+	
+	public void setBin(File bin) {
+		this.bin = bin;
+	}
+	
+	public void setJavadoc(File javadoc) {
+		this.javadoc = javadoc;
+	}
+	
+	public void setPom(File pom) {
+		this.pom = pom;
+	}
+	
+	public void setKey(File key) {
+		this.key = key;
+	}
+	
+	public void setOut(File out) {
+		this.out = out;
+	}
+	
+	public void setVersion(String version) {
+		this.version = version;
+	}
+	
+	public void setArtifactId(String artifactId) {
+		this.artifactId = artifactId;
+	}
+	
+	public void setPassphrase(String passphrase) {
+		this.passphrase = passphrase;
+	}
+	
+	public void setNoSourceOrJavadocNeeded(boolean noSourceOrJavadocNeeded) {
+		this.noSourceOrJavadocNeeded = noSourceOrJavadocNeeded;
+	}
 	
 	@Override public void execute() throws BuildException {
 		try {
@@ -68,9 +104,12 @@ public class CreateArtifactBundle extends Task {
 		
 		byte[] pomData;
 		try {
-			@Cleanup InputStream pomStream = new FileInputStream(pom);
-			pomData = readStream(pomStream);
-			pomStream.close();
+			InputStream pomStream = new FileInputStream(pom);
+			try {
+				pomData = readStream(pomStream);
+			} finally {
+				pomStream.close();
+			}
 		} catch (FileNotFoundException e) {
 			throw new BuildException("Missing pom file", e, getLocation());
 		} catch (IOException e) {
@@ -84,20 +123,24 @@ public class CreateArtifactBundle extends Task {
 		CreateDetachedSignatures signer = new CreateDetachedSignatures();
 		
 		try {
-			@Cleanup FileOutputStream outStream = new FileOutputStream(out);
-			JarOutputStream zipOut = new JarOutputStream(outStream);
-			zipOut.putNextEntry(new JarEntry("pom.xml"));
-			zipOut.write(pomData);
-			ByteArrayOutputStream signature = new ByteArrayOutputStream();
-			signer.signFile(new ByteArrayInputStream(pomData), signature, key, passphrase);
-			zipOut.putNextEntry(new JarEntry("pom.xml.asc"));
-			zipOut.write(signature.toByteArray());
-			
-			writeToJar(zipOut, artifactId + "-" + version + ".jar", bin);
-			if (src != null) writeToJar(zipOut, artifactId + "-" + version + "-sources.jar", src);
-			if (src != null) writeToJar(zipOut, artifactId + "-" + version + "-javadoc.jar", javadoc);
-			zipOut.closeEntry();
-			zipOut.close();
+			FileOutputStream outStream = new FileOutputStream(out);
+			try {
+				JarOutputStream zipOut = new JarOutputStream(outStream);
+				zipOut.putNextEntry(new JarEntry("pom.xml"));
+				zipOut.write(pomData);
+				ByteArrayOutputStream signature = new ByteArrayOutputStream();
+				signer.signFile(new ByteArrayInputStream(pomData), signature, key, passphrase);
+				zipOut.putNextEntry(new JarEntry("pom.xml.asc"));
+				zipOut.write(signature.toByteArray());
+				
+				writeToJar(zipOut, artifactId + "-" + version + ".jar", bin);
+				if (src != null) writeToJar(zipOut, artifactId + "-" + version + "-sources.jar", src);
+				if (src != null) writeToJar(zipOut, artifactId + "-" + version + "-javadoc.jar", javadoc);
+				zipOut.closeEntry();
+				zipOut.close();
+			} finally {
+				outStream.close();
+			}
 		} catch (FileNotFoundException e) {
 			throw new BuildException("File not found: " + e.getMessage(), e, getLocation());
 		} catch (IOException e) {
@@ -110,12 +153,16 @@ public class CreateArtifactBundle extends Task {
 	private void writeToJar(JarOutputStream zipOut, String filename, File data) throws IOException, SigningException {
 		ByteArrayOutputStream signature = new ByteArrayOutputStream();
 		zipOut.putNextEntry(new JarEntry(filename));
-		@Cleanup FileInputStream fis = new FileInputStream(data);
-		CreateDetachedSignatures signer = new CreateDetachedSignatures();
-		signer.signFile(new DuplicatingInputStream(fis, zipOut), signature, key, passphrase);
-		zipOut.putNextEntry(new JarEntry(filename + ".asc"));
-		zipOut.write(signature.toByteArray());
-		zipOut.closeEntry();
+		FileInputStream fis = new FileInputStream(data);
+		try {
+			CreateDetachedSignatures signer = new CreateDetachedSignatures();
+			signer.signFile(new DuplicatingInputStream(fis, zipOut), signature, key, passphrase);
+			zipOut.putNextEntry(new JarEntry(filename + ".asc"));
+			zipOut.write(signature.toByteArray());
+			zipOut.closeEntry();
+		} finally {
+			fis.close();
+		}
 	}
 	
 	private static class DuplicatingInputStream extends InputStream {
@@ -156,26 +203,29 @@ public class CreateArtifactBundle extends Task {
 		}
 	}
 	
-	@SneakyThrows(IOException.class)
 	private static byte[] replaceVersion(byte[] in, String token_, String replacement_) {
-		int start = 0;
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		byte[] token = token_.getBytes("US-ASCII");
-		byte[] replacement = replacement_.getBytes("US-ASCII");
-		
-		while (true) {
-			int idx = find(in, token, start);
-			if (idx == -1) break;
-			out.write(in, start, idx - start);
-			start = idx + token.length;
-			out.write(replacement);
+		try {
+			int start = 0;
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			byte[] token = token_.getBytes("US-ASCII");
+			byte[] replacement = replacement_.getBytes("US-ASCII");
+			
+			while (true) {
+				int idx = find(in, token, start);
+				if (idx == -1) break;
+				out.write(in, start, idx - start);
+				start = idx + token.length;
+				out.write(replacement);
+			}
+			
+			if (start < in.length) {
+				out.write(in, start, in.length - start);
+			}
+			
+			return out.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException("IOException on mem-only operations", e);
 		}
-		
-		if (start < in.length) {
-			out.write(in, start, in.length - start);
-		}
-		
-		return out.toByteArray();
 	}
 	
 	private static int find(byte[] haystack, byte[] needle, int start) {

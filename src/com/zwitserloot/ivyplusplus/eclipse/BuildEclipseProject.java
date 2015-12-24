@@ -38,10 +38,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import lombok.Cleanup;
-import lombok.Setter;
-import lombok.Value;
-
 import org.apache.ivy.ant.IvyPostResolveTask;
 import org.apache.ivy.core.IvyPatternHelper;
 import org.apache.ivy.core.module.descriptor.Artifact;
@@ -53,8 +49,8 @@ import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 
 public class BuildEclipseProject extends IvyPostResolveTask {
-	@Setter private File todir = null;
-	@Setter private String projectname;
+	private File todir = null;
+	private String projectname;
 	private List<Srcdir> srcdirs = new ArrayList<Srcdir>();
 	private List<Conf> confs = new ArrayList<Conf>();
 	private List<Apt> apts = new ArrayList<Apt>();
@@ -62,32 +58,56 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private List<Projectdep> projectdeps = new ArrayList<Projectdep>();
 	private List<Export> exports = new ArrayList<Export>();
 	private List<Lib> libs = new ArrayList<Lib>();
-	@Setter private String source = "1.8";
-	@Setter private Settings settings;
-	@Setter private boolean pde = false;
+	private String source = "1.8";
+	private Settings settings;
+	private boolean pde = false;
+	
+	public void setTodir(File todir) {
+		this.todir = todir;
+	}
+	
+	public void setProjectname(String projectname) {
+		this.projectname = projectname;
+	}
+	
+	public void setSource(String source) {
+		this.source = source;
+	}
+	
+	public void setSettings(Settings settings) {
+		this.settings = settings;
+	}
+	
+	public void setPde(boolean pde) {
+		this.pde = pde;
+	}
 	
 	private void generateDotProject() throws IOException {
 		File f = new File(todir, ".project");
 		f.delete();
-		@Cleanup
 		FileOutputStream fos = new FileOutputStream(f);
-		@Cleanup
-		InputStream in = BuildEclipseProject.class.getResourceAsStream(pde ? "pde_project.template" : "project.template");
-		byte[] b = new byte[4096];
-		for (int r = in.read(b); r != -1; r = in.read(b)) {
-			for (int i = 0; i < r; i++) {
-				if (b[i] == '%') {
-					fos.write(b, 0, i);
-					fos.write(projectname.getBytes("UTF-8"));
-					if (i < r - 1) fos.write(b, i + 1, r - i - 1);
-					break;
-				} else if (i == r - 1) {
-					fos.write(b, 0, r);
+		try {
+			InputStream in = BuildEclipseProject.class.getResourceAsStream(pde ? "pde_project.template" : "project.template");
+			try {
+				byte[] b = new byte[4096];
+				for (int r = in.read(b); r != -1; r = in.read(b)) {
+					for (int i = 0; i < r; i++) {
+						if (b[i] == '%') {
+							fos.write(b, 0, i);
+							fos.write(projectname.getBytes("UTF-8"));
+							if (i < r - 1) fos.write(b, i + 1, r - i - 1);
+							break;
+						} else if (i == r - 1) {
+							fos.write(b, 0, r);
+						}
+					}
 				}
+			} finally {
+				in.close();
 			}
+		} finally {
+			fos.close();
 		}
-		in.close();
-		fos.close();
 	}
 	
 	private void generateDotFactorypath() throws IOException {
@@ -95,29 +115,68 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		
 		File f = new File(todir, ".factorypath");
 		f.delete();
-		@Cleanup FileOutputStream fos = new FileOutputStream(f);
-		@Cleanup Writer out = new OutputStreamWriter(fos, "UTF-8");
-		out.write("<factorypath>\n");
-		for (Apt apt : apts) {
-			EclipsePath ep = eclipsify(todir, apt.getLocation(), true);
-			if (ep == null) throw new BuildException("'location' attribute is required on <apt>", getLocation());
-			out.write("\t<factorypathentry kind=\"");
-			out.write(ep.isExternal() ? "EXTJAR" : "WKSPJAR");
-			out.write("\" id=\"");
-			out.write(ep.getPath());
-			out.write("\" enabled=\"true\" runInBatch=\"false\"/>\n");
+		FileOutputStream fos = new FileOutputStream(f);
+		try {
+			Writer out = new OutputStreamWriter(fos, "UTF-8");
+			try {
+				out.write("<factorypath>\n");
+				for (Apt apt : apts) {
+					EclipsePath ep = eclipsify(todir, apt.getLocation(), true);
+					if (ep == null) throw new BuildException("'location' attribute is required on <apt>", getLocation());
+					out.write("\t<factorypathentry kind=\"");
+					out.write(ep.isExternal() ? "EXTJAR" : "WKSPJAR");
+					out.write("\" id=\"");
+					out.write(ep.getPath());
+					out.write("\" enabled=\"true\" runInBatch=\"false\"/>\n");
+				}
+				out.write("</factorypath>\n");
+			} finally {
+				out.close();
+			}
+		} finally {
+			fos.close();
 		}
-		out.write("</factorypath>\n");
-		out.close();
 	}
 	
-	@Value
-	private static class EclipsePath {
-		boolean external;
-		String path;
+	private static final class EclipsePath {
+		private final boolean external;
+		private final String path;
+		
+		public EclipsePath(boolean external, String path) {
+			this.external = external;
+			this.path = path;
+		}
 		
 		@Override public String toString() {
 			return path;
+		}
+		
+		public String getPath() {
+			return path;
+		}
+		
+		public boolean isExternal() {
+			return external;
+		}
+		
+		@Override public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (external ? 1231 : 1237);
+			result = prime * result + ((path == null) ? 0 : path.hashCode());
+			return result;
+		}
+		
+		@Override public boolean equals(Object obj) {
+			if (this == obj) return true;
+			if (obj == null) return false;
+			if (getClass() != obj.getClass()) return false;
+			EclipsePath other = (EclipsePath) obj;
+			if (external != other.external) return false;
+			if (path == null) {
+				if (other.path != null) return false;
+			} else if (!path.equals(other.path)) return false;
+			return true;
 		}
 	}
 	
@@ -203,11 +262,17 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private void generateDotClasspath(String content) throws IOException {
 		File f = new File(todir, ".classpath");
 		f.delete();
-		@Cleanup
 		FileOutputStream fos = new FileOutputStream(f);
-		@Cleanup
-		Writer out = new OutputStreamWriter(fos, "UTF-8");
-		out.write(content);
+		try {
+			Writer out = new OutputStreamWriter(fos, "UTF-8");
+			try {
+				out.write(content);
+			} finally {
+				out.close();
+			}
+		} finally {
+			fos.close();
+		}
 	}
 	
 	public void addSrcdir(Srcdir srcdir) {

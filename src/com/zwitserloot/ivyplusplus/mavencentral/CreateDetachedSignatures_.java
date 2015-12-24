@@ -32,8 +32,6 @@ import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.util.Iterator;
 
-import lombok.Cleanup;
-
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.openpgp.PGPException;
@@ -50,14 +48,26 @@ public class CreateDetachedSignatures_ {
 		try {
 			PGPSecretKey key;
 			{
-				@Cleanup FileInputStream keyIn = new FileInputStream(keyFile);
-				key = getSigningKey(keyIn, keyFile.getName());
+				FileInputStream keyIn = new FileInputStream(keyFile);
+				try {
+					key = getSigningKey(keyIn, keyFile.getName());
+				} finally {
+					keyIn.close();
+				}
 			}
 			
 			{
-				@Cleanup OutputStream outStream = new FileOutputStream(file.getAbsolutePath() + ".asc");
-				@Cleanup InputStream fileIn = new FileInputStream(file);
-				signFile(fileIn, key, passphrase, outStream);
+				OutputStream outStream = new FileOutputStream(file.getAbsolutePath() + ".asc");
+				try {
+					InputStream fileIn = new FileInputStream(file);
+					try {
+						signFile(fileIn, key, passphrase, outStream);
+					} finally {
+						fileIn.close();
+					}
+				} finally {
+					outStream.close();
+				}
 			}
 		} catch (NoSuchProviderException e) {
 			throw new SigningException("Bouncycastle provider not loaded", e);
@@ -74,8 +84,12 @@ public class CreateDetachedSignatures_ {
 		try {
 			PGPSecretKey key;
 			{
-				@Cleanup FileInputStream keyIn = new FileInputStream(keyFile);
-				key = getSigningKey(keyIn, keyFile.getName());
+				FileInputStream keyIn = new FileInputStream(keyFile);
+				try {
+					key = getSigningKey(keyIn, keyFile.getName());
+				} finally {
+					keyIn.close();
+				}
 			}
 			
 			{

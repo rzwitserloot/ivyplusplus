@@ -30,8 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import lombok.Setter;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DynamicAttribute;
 import org.apache.tools.ant.RuntimeConfigurable;
@@ -49,8 +47,12 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 	private UnknownElement javac, copy, mkdir;
 	private Path src;
 	private boolean doCopy = true;
-	@Setter private String copyExcludes;
+	private String copyExcludes;
 	private boolean destdirSet;
+	
+	public void setCopyExcludes(String copyExcludes) {
+		this.copyExcludes = copyExcludes;
+	}
 	
 	public void setCopy(boolean copy) {
 		this.doCopy = copy;

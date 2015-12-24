@@ -30,9 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import lombok.Cleanup;
-import lombok.Setter;
-
 import org.apache.ivy.ant.IvyPostResolveTask;
 import org.apache.ivy.core.IvyPatternHelper;
 import org.apache.ivy.core.module.descriptor.Artifact;
@@ -43,12 +40,24 @@ import org.apache.ivy.core.resolve.ResolveOptions;
 import org.apache.tools.ant.BuildException;
 
 public class BuildIntellijProject extends IvyPostResolveTask {
-	@Setter private File todir = null;
+	private File todir = null;
 	private List<Module> modules = new ArrayList<Module>();
 	private List<Conf> confs = new ArrayList<Conf>();
 	private Apt apt;
-	@Setter private String source = "1.8";
-	@Setter private Settings settings;
+	private String source = "1.8";
+	private Settings settings;
+	
+	public void setTodir(File todir) {
+		this.todir = todir;
+	}
+	
+	public void setSource(String source) {
+		this.source = source;
+	}
+	
+	public void setSettings(Settings settings) {
+		this.settings = settings;
+	}
 	
 	public void addConf(Conf conf) {
 		confs.add(conf);
@@ -193,38 +202,44 @@ public class BuildIntellijProject extends IvyPostResolveTask {
 	private static void applyTemplate(String resource, File out, String... replacements) throws IOException {
 		out.delete();
 		out.getParentFile().mkdirs();
-		@Cleanup FileOutputStream fos = new FileOutputStream(out);
-		@Cleanup InputStream in = BuildIntellijProject.class.getResourceAsStream(resource);
-		byte[] b = new byte[4096];
-		int state = 0;
-		for (int r = in.read(b); r != -1; r = in.read(b)) {
-			int start = 0;
-			for (int i = 0; i < r; i++) {
-				if (b[i] == '%') {
-					if (state == 0) {
-						fos.write(b, start, i - start);
-						start = i;
+		FileOutputStream fos = new FileOutputStream(out);
+		try {
+			InputStream in = BuildIntellijProject.class.getResourceAsStream(resource);
+			try {
+				byte[] b = new byte[4096];
+				int state = 0;
+				for (int r = in.read(b); r != -1; r = in.read(b)) {
+					int start = 0;
+					for (int i = 0; i < r; i++) {
+						if (b[i] == '%') {
+							if (state == 0) {
+								fos.write(b, start, i - start);
+								start = i;
+							}
+							
+							if (++state > MARKER.length()) {
+								state--; start++;
+								fos.write('%');
+							}
+						} else if (state == MARKER.length() && Character.isDigit(b[i])) {
+							start = i + 1;
+							fos.write(replacements[b[i] - '1'].getBytes("UTF-8"));
+							state = 0;
+						} else if (state > 0) {
+							state = 0;
+							fos.write(b, start, i - start);
+							start = i;
+						}
 					}
-					
-					if (++state > MARKER.length()) {
-						state--; start++;
-						fos.write('%');
+					if (start < r) {
+						fos.write(b, start, r - start);
 					}
-				} else if (state == MARKER.length() && Character.isDigit(b[i])) {
-					start = i + 1;
-					fos.write(replacements[b[i] - '1'].getBytes("UTF-8"));
-					state = 0;
-				} else if (state > 0) {
-					state = 0;
-					fos.write(b, start, i - start);
-					start = i;
 				}
+			} finally {
+				in.close();
 			}
-			if (start < r) {
-				fos.write(b, start, r - start);
-			}
+		} finally {
+			fos.close();
 		}
-		in.close();
-		fos.close();
 	}
 }

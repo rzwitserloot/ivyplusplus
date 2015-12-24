@@ -34,8 +34,6 @@ import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.Date;
 
-import lombok.Cleanup;
-
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPException;
@@ -63,9 +61,17 @@ public class CreateSigningKey_ {
 			
 			KeyPair signPair = elgamal.generateKeyPair();
 			
-			@Cleanup OutputStream privOut = new FileOutputStream("mavenrepo-signing-key-secret.bpr");
-			@Cleanup OutputStream pubOut = new FileOutputStream("mavenrepo-signing-key-public.bpr");
-			export(privOut,pubOut, privPair, signPair, identity, passphrase);
+			OutputStream privOut = new FileOutputStream("mavenrepo-signing-key-secret.bpr");
+			try {
+				OutputStream pubOut = new FileOutputStream("mavenrepo-signing-key-public.bpr");
+				try {
+					export(privOut,pubOut, privPair, signPair, identity, passphrase);
+				} finally {
+					pubOut.close();
+				}
+			} finally {
+				privOut.close();
+			}
 		} catch (NoSuchAlgorithmException e) {
 			throw new SigningException("Bouncycastle not configured correctly", e);
 		} catch (InvalidAlgorithmParameterException e) {

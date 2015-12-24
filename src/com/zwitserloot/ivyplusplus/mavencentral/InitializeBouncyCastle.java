@@ -33,9 +33,6 @@ import java.security.Security;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import lombok.Cleanup;
-import lombok.Lombok;
-
 public class InitializeBouncyCastle {
 	private static AtomicBoolean initialized = new AtomicBoolean(false);
 	private static ClassLoader loader;
@@ -66,16 +63,22 @@ public class InitializeBouncyCastle {
 			File file = File.createTempFile(resourceKey, "jar");
 			file.deleteOnExit();
 			
-			@Cleanup FileOutputStream out = new FileOutputStream(file);
-			@Cleanup InputStream in = InitializeBouncyCastle.class.getResourceAsStream("/" + resourceKey + ".jar");
-			byte[] b = new byte[4096];
-			while (true) {
-				int r = in.read(b);
-				if (r == -1) break;
-				out.write(b, 0, r);
+			FileOutputStream out = new FileOutputStream(file);
+			try {
+				InputStream in = InitializeBouncyCastle.class.getResourceAsStream("/" + resourceKey + ".jar");
+				try {
+					byte[] b = new byte[4096];
+					while (true) {
+						int r = in.read(b);
+						if (r == -1) break;
+						out.write(b, 0, r);
+					}
+				} finally {
+					if (in != null) in.close();
+				}
+			} finally {
+				out.close();
 			}
-			in.close();
-			out.close();
 			
 			return file.toURI().toURL();
 		} catch (IOException e) {
@@ -95,7 +98,12 @@ public class InitializeBouncyCastle {
 		} catch (InstantiationException e) {
 			t = e;
 		} catch (InvocationTargetException e) {
-			throw Lombok.sneakyThrow(e);
+			Throwable c = e.getCause();
+			if (c instanceof RuntimeException) throw (RuntimeException) c;
+			if (c instanceof Error) throw (Error) c;
+			if (c instanceof SigningException) throw (SigningException) c;
+			if (c == null) throw new RuntimeException();
+			throw new RuntimeException(c);
 		} catch (NoSuchMethodException e) {
 			t = e;
 		}
