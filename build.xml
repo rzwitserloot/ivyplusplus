@@ -19,40 +19,37 @@
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
   THE SOFTWARE.
 -->
-<project name="com.zwitserloot.ivyplusplus" default="dist" xmlns:ivy="antlib:com.zwitserloot.ivyplusplus">
+<project name="com.zwitserloot.ivyplusplus" default="dist" xmlns:ivy="antlib:org.apache.ivy.ant">
+	<property name="jre.version" value="1.7" />
 	<property name="ivy.retrieve.pattern" value="lib/[conf]/[artifact].[ext]" />
+	<property name="ivy.lib" value="ivy-2.4.0.jar" />
+	<property name="ivy.location" value="https://projectlombok.org/downloads/${ivy.lib}" />
+	<available file="lib/${ivy.lib}" property="ivy.available" />
 	
-	<available file="lib/ivyplusplus.jar" property="ivyplusplus.available" />
+	<target name="download-ivy" unless="ivy.available">
+		<mkdir dir="lib" />
+		<get src="${ivy.location}" dest="lib/${ivy.lib}" usetimestamp="true" />
+	</target>
 	
-	<target name="version" depends="ensure-ipp" description="Shows the version number." unless="ivyplusplus.version">
-		<mkdir dir="build/lombok" />
-		<ivy:compile source="1.6" target="1.6" includeDestClasses="false" srcdir="src" destdir="build" includes="com/zwitserloot/ivyplusplus/Version.java" />
+	<target name="version" description="Shows the version number." unless="ivyplusplus.version">
+		<mkdir dir="build" />
+		<javac source="${jre.version}" target="${jre.version}" includeDestClasses="false" includeAntRuntime="false" srcdir="src" destdir="build" includes="com/zwitserloot/ivyplusplus/Version.java">
+			<compilerarg value="-Xlint:-options" />
+		</javac>
 		<java
 			classname="com.zwitserloot.ivyplusplus.Version"
 			classpath="build"
 			failonerror="true"
 			output="build/version.txt" />
-		<ivy:loadversion property="ivyplusplus.version" file="build/version.txt" />
-		<delete file="build/version.txt" />
+		<loadresource property="ivyplusplus.version">
+			<file file="build/version.txt" />
+			<filterchain>
+				<striplinebreaks />
+			</filterchain>
+		</loadresource>
+		<delete quiet="true" file="build/version.txt" />
 		<echo level="info">com.zwitserloot.ivyplusplus version: ${ivyplusplus.version}</echo>
 	</target>
-	
-	<target name="download-ipp" unless="ivyplusplus.available">
-		<mkdir dir="lib" />
-		<get src="http://projectlombok.org/downloads/ivyplusplus.jar" dest="lib/ivyplusplus.jar" usetimestamp="true" />
-	</target>
-	
-	<target name="load-ipp" depends="download-ipp">
-		<taskdef classpath="lib/ivyplusplus.jar" resource="com/zwitserloot/ivyplusplus/antlib.xml" uri="antlib:com.zwitserloot.ivyplusplus" />
-		<ivy:ensureippversion version="1.5" property="ivyplusplus.minimumAvailable" />
-	</target>
-	
-	<target name="redownload-ipp" unless="ivyplusplus.minimumAvailable">
-		<get src="http://projectlombok.org/downloads/ivyplusplus.jar" dest="lib/ivyplusplus.jar" />
-		<fail>A new version of ivyplusplus was required and has been downloaded. Rerun the script to continue.</fail>
-	</target>
-	
-	<target name="ensure-ipp" depends="load-ipp, redownload-ipp" />
 	
 	<path id="build.path">
 		<fileset dir="lib/build">
@@ -86,9 +83,17 @@
 	
 	<target name="compile" depends="ensureBuildDeps" description="Compiles ivyplusplus">
 		<delete quiet="true" file="build/pack/com/zwitserloot/ivyplusplus/antlib.xml" />
-		<ivy:compile srcdir="src" destdir="build/pack" target="1.6" source="1.6">
+		<mkdir dir="build/pack" />
+		<javac includeDestClasses="false" includeAntRuntime="false" srcdir="src" destdir="build/pack" target="${jre.version}" source="${jre.version}">
 			<classpath refid="build.path" />
-		</ivy:compile>
+			<compilerarg value="-Xlint:-options" />
+		</javac>
+		<copy todir="build/pack">
+			<fileset dir="src">
+				<include name="**/*.template" />
+				<include name="**/antlib.xml" />
+			</fileset>
+		</copy>
 	</target>
 	
 	<target name="isolateBridges" depends="compile">
@@ -148,7 +153,8 @@
 		<replace file="build/pack/com/zwitserloot/ivyplusplus/antlib.xml" token="-- insert here -->" value="-- ivy's antlib -->${antlib-ivy.contents}" />
 	</target>
 	
-	<target name="config-ivy" depends="ensure-ipp">
+	<target name="config-ivy" depends="download-ivy">
+		<taskdef classpath="lib/ivy-2.4.0.jar" resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" />
 		<ivy:configure file="buildScripts/ivysettings.xml" />
 	</target>
 	
@@ -169,7 +175,7 @@
 		<ivy:retrieve />
 	</target>
 	
-	<target name="contrib" depends="config-ivy" description="Downloads various non-crucial documentation, sources, etc that are useful when developing lombok.ast.">
+	<target name="contrib" depends="config-ivy" description="Downloads various non-crucial documentation, sources, etc that are useful when developing ivyplusplus.">
 		<ivy:resolve file="buildScripts/ivy.xml" refresh="true" conf="contrib" />
 		<ivy:retrieve />
 	</target>
@@ -189,18 +195,6 @@
 			username="lombokup"
 			keyfile="escudo-upload.key" passphrase=""
 			trust="true" command="./deployIvyPlusPlus '${ivyplusplus.version}'" />
-	</target>
-	
-	<target name="intellij" depends="deps" description="Creates intellij project files and downloads all dependencies. Open this directory as project in intellij after running this target.">
-		<ivy:intellijgen source="1.6">
-			<conf name="build" />
-			<module name="ivyplusplus">
-				<srcdir dir="src" />
-			</module>
-			<settings>
-				<url url="http://projectlombok.org/downloads/lombok.intellij.settings" />
-			</settings>
-		</ivy:intellijgen>
 	</target>
 	
 	<target name="eclipse" depends="deps, contrib" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">

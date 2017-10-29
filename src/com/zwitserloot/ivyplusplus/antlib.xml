@@ -47,7 +47,7 @@
 			}
 		}
 	}</echo>
-			<javac source="1.6" target="1.6"
+			<javac source="1.7" target="1.7"
 				destdir="@{tempdir}" srcdir="@{tempdir}" includes="ShowHtml.java" />
 			<java fork="true" classname="ShowHtml" classpath="@{tempdir}">
 				<jvmarg value="-Dapple.awt.UIElement=true" />
@@ -71,7 +71,7 @@
 			}
 		}
 	}</echo>
-			<javac source="1.6" target="1.6"
+			<javac source="1.7" target="1.7"
 				destdir="@{todir}" srcdir="@{todir}" includes="ShowDependencyReport.java" />
 			<java fork="true" classname="ShowDependencyReport" classpath="@{todir}">
 				<jvmarg value="-Dapple.awt.UIElement=true" />
