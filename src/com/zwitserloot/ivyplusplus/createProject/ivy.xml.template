@@ -10,11 +10,11 @@
 	</configurations>
 	<dependencies>
 		{{if JUNIT}}
-		<dependency org="junit" name="junit" rev="4.11" conf="test->master" />
+		<dependency org="junit" name="junit" rev="4.12" conf="test->master" />
 		{{end JUNIT}}
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.13" conf="build, runtime->master" />
-		<dependency org="org.slf4j" name="slf4j-simple" rev="1.7.13" conf="runtime->master" />
-		<dependency org="com.google.guava" name="guava" rev="19.0" conf="runtime, build->master; contrib->sources" />
-		<dependency org="org.projectlombok" name="lombok" rev="1.16.6" conf="build->master" />
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.25" conf="build, runtime->master" />
+		<dependency org="org.slf4j" name="slf4j-simple" rev="1.7.25" conf="runtime->master" />
+		<dependency org="com.google.guava" name="guava" rev="23.3-jre" conf="runtime, build->master; contrib->sources" />
+		<dependency org="org.projectlombok" name="lombok" rev="1.16.18" conf="build->master" />
 	</dependencies>
 </ivy-module>
