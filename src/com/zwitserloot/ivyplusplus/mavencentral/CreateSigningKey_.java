@@ -1,5 +1,5 @@
 /**
- * Copyright © 2011 Reinier Zwitserloot.
+ * Copyright © 2011-2017 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,40 +26,46 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.Date;
 
-import org.bouncycastle.jce.spec.ElGamalParameterSpec;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.generators.DSAKeyPairGenerator;
+import org.bouncycastle.crypto.generators.ElGamalKeyPairGenerator;
+import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 
 public class CreateSigningKey_ {
 	public void createSigningKey(String identity, String passphrase, PrintStream log) throws IOException, SigningException {
 		if (passphrase == null) passphrase = "";
+		SecureRandom sr = new SecureRandom();
 		
 		try {
-			KeyPairGenerator gen = KeyPairGenerator.getInstance("DSA", "BC");
-			
-			gen.initialize(1024);
-			
+			DSAKeyPairGenerator gen = new DSAKeyPairGenerator();
+			gen.init(new KeyGenerationParameters(sr, 1024));
 			log.printf("Please hold on, a 1024 bit key is being generated. This takes a while and requires a lot of random data, so try moving the mouse at random.\n");
 			
-			KeyPair privPair = gen.generateKeyPair();
-			KeyPairGenerator elgamal = KeyPairGenerator.getInstance("ELGAMAL", "BC");
+			AsymmetricCipherKeyPair privPair = gen.generateKeyPair();
+			ElGamalKeyPairGenerator elgamal = new ElGamalKeyPairGenerator();
 			BigInteger g = new BigInteger("153d5d6172adb43045b68ae8e1de1070b6137005686d29d3d73a7749199681ee5b212c9b96bfdcfa5b20cd5e3fd2044895d609cf9b410b7a0f12ca1cb9a428cc", 16);
 			BigInteger p = new BigInteger("9494fec095f3b85ee286542b3836fc81a5dd0a0349b4c239dd38744d488cf8e31db8bcb7d33b41abb9e5a33cca9144b1cef332c94bf0573bf047a3aca98cdf3b", 16);
-			elgamal.initialize(new ElGamalParameterSpec(g, p));
+			elgamal.init(new ElGamalKeyGenerationParameters(sr, new ElGamalParameters(p, g)));
 			
-			KeyPair signPair = elgamal.generateKeyPair();
+			AsymmetricCipherKeyPair signPair = elgamal.generateKeyPair();
 			
 			OutputStream privOut = new FileOutputStream("mavenrepo-signing-key-secret.bpr");
 			try {
@@ -72,10 +78,6 @@ public class CreateSigningKey_ {
 			} finally {
 				privOut.close();
 			}
-		} catch (NoSuchAlgorithmException e) {
-			throw new SigningException("Bouncycastle not configured correctly", e);
-		} catch (InvalidAlgorithmParameterException e) {
-			throw new SigningException("Bouncycastle not configured correctly", e);
 		} catch (NoSuchProviderException e) {
 			throw new SigningException("Bouncycastle provider not loaded", e);
 		} catch (PGPException e) {
@@ -84,11 +86,18 @@ public class CreateSigningKey_ {
 		}
 	}
 	
-	void export(OutputStream privOut, OutputStream pubOut, KeyPair privPair_, KeyPair signPair_, String identity, String passphrase) throws PGPException, NoSuchProviderException, IOException {
-		PGPKeyPair privPair = new PGPKeyPair(PGPPublicKey.DSA, privPair_, new Date());
-		PGPKeyPair signPair = new PGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, signPair_, new Date());
+	void export(OutputStream privOut, OutputStream pubOut, AsymmetricCipherKeyPair privPair_, AsymmetricCipherKeyPair signPair_, String identity, String passphrase) throws PGPException, NoSuchProviderException, IOException {
+		PGPKeyPair privPair = new BcPGPKeyPair(PGPPublicKey.DSA, privPair_, new Date());
+		PGPKeyPair signPair = new BcPGPKeyPair(PGPPublicKey.ELGAMAL_ENCRYPT, signPair_, new Date());
 		
-		PGPKeyRingGenerator ringGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, privPair, identity, PGPEncryptedData.AES_256, passphrase.toCharArray(), true, null, null, new SecureRandom(), "BC");
+		PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+		PGPKeyRingGenerator ringGen = new PGPKeyRingGenerator(
+				PGPSignature.POSITIVE_CERTIFICATION,
+				privPair,
+				identity,
+				sha1Calc, null, null,
+				new JcaPGPContentSignerBuilder(privPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA1),
+				new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).setProvider("BC").build(passphrase.toCharArray()));
 		ringGen.addSubKey(signPair);
 		ringGen.generateSecretKeyRing().encode(privOut);
 		privOut.close();

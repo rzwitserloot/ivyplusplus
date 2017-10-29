@@ -42,6 +42,12 @@ import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 
 public class CreateDetachedSignatures_ {
 	public void signFile(File file, File keyFile, String passphrase) throws IOException, SigningException {
@@ -107,9 +113,12 @@ public class CreateDetachedSignatures_ {
 	}
 	
 	void signFile(InputStream fileData, PGPSecretKey signingKey, String passphrase, OutputStream out) throws IOException, NoSuchProviderException, PGPException, NoSuchAlgorithmException, SignatureException {
-		PGPPrivateKey privKey = signingKey.extractPrivateKey(passphrase.toCharArray(), "BC");
-		PGPSignatureGenerator sigGen = new PGPSignatureGenerator(signingKey.getPublicKey().getAlgorithm(), PGPUtil.SHA1, "BC");
-		sigGen.initSign(PGPSignature.BINARY_DOCUMENT, privKey);
+		PGPDigestCalculatorProvider provider = new BcPGPDigestCalculatorProvider();
+		PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(provider).build(passphrase.toCharArray());
+		PGPPrivateKey privKey = signingKey.extractPrivateKey(decryptor);
+		PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
+			new BcPGPContentSignerBuilder(signingKey.getPublicKey().getAlgorithm(), PGPUtil.SHA1));
+		sigGen.init(PGPSignature.BINARY_DOCUMENT, privKey);
 		out = new ArmoredOutputStream(out);
 		BCPGOutputStream bOut = new BCPGOutputStream(out);
 		byte[] b = new byte[4096];
@@ -125,7 +134,7 @@ public class CreateDetachedSignatures_ {
 	}
 	
 	PGPSecretKey getSigningKey(InputStream keyData, String streamName) throws IOException, PGPException, SigningException {
-		PGPSecretKeyRingCollection keyrings_ = new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(keyData));
+		PGPSecretKeyRingCollection keyrings_ = new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(keyData), new BcKeyFingerprintCalculator());
 		Iterator<?> keyrings = keyrings_.getKeyRings();
 		while (keyrings.hasNext()) {
 			PGPSecretKeyRing keys_ = (PGPSecretKeyRing) keyrings.next();
