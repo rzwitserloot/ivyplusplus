@@ -133,10 +133,6 @@
 		<copy file="dist/ivyplusplus-${ivyplusplus.version}.jar" tofile="dist/ivyplusplus.jar" />
 	</target>
 	
-	<target name="show-dep-report" depends="deps" description="Displays a dependencies report">
-		<ivy:show-dep-report />
-	</target>
-	
 	<target name="stripeIvy">
 		<mkdir dir="build/pack" />
 		<unjar src="lib/build/ivy.jar" dest="build/pack" />
@@ -198,12 +194,27 @@
 	</target>
 	
 	<target name="eclipse" depends="deps, contrib" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
-		<ivy:eclipsegen source="1.6">
-			<srcdir dir="src" />
-			<conf name="build" sources="contrib" />
-			<settings>
-				<url url="http://projectlombok.org/downloads/lombok.eclipse.settings" />
-			</settings>
-		</ivy:eclipsegen>
+		<property name="allDeps" refid="build.path" />
+		<property name="tab" value="&#x0009;" />
+		<echo file="build/depslist.txt">${allDeps}</echo>
+		<replace file="build/depslist.txt" token=":" encoding="UTF-8">
+			<replacevalue>
+</replacevalue>
+		</replace>
+		<replaceregexp byline="true" file="build/depslist.txt">
+			<regexp pattern="^.*?(lib/build/.*.jar)$" />
+			<substitution expression="${tab}&lt;classpathentry kind=&quot;lib&quot; path=&quot;\1&quot;/&gt;" />
+		</replaceregexp>
+		<copy file="src/com/zwitserloot/ivyplusplus/eclipse/project.template" tofile="./.project" />
+		<replace file="./.project" token="%" value="com.zwitserloot.ivyplusplus" encoding="UTF-8" />
+		<concat destfile="./.classpath" encoding="UTF-8">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;classpath&gt;
+	&lt;classpathentry kind="src" path="src/"/&gt;
+</concat>
+		<concat destfile="./.classpath" encoding="UTF-8" append="true" fixlastline="true"><fileset dir="build" includes="depslist.txt" /></concat>
+		<concat destfile="./.classpath" encoding="UTF-8" append="true">	&lt;classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-${jre.version}"/&gt;
+	&lt;classpathentry kind="output" path="bin"/&gt;
+&lt;/classpath&gt;
+</concat>
 	</target>
 </project>
