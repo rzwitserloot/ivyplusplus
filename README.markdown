@@ -118,11 +118,14 @@ _Supported since ipp 1.4_
 
 The defaults are also different:
  debug = on
- source = 1.6
- target = 1.6
+ source = 1.8
+ target = 1.8
  encoding = UTF-8
+ includeAntRuntime = false
 
 The _destdir_ directory is also created automatically, so you don't have to `<mkdir>` it first.
+
+(since ipp 1.20: You can also set ecj="true" to use ecj instead. Useful if you want to compile with old source/target).
 
 _Supported since ipp 1.0_
 

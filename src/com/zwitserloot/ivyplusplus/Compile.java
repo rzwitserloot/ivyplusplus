@@ -43,12 +43,19 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.util.facade.FacadeTaskHelper;
 import org.apache.tools.ant.util.facade.ImplementationSpecificArgument;
 
+import com.zwitserloot.ivyplusplus.ecj.EcjAdapter;
+
 public class Compile extends MatchingTask implements DynamicAttribute {
 	private UnknownElement javac, copy, mkdir;
 	private Path src;
 	private boolean doCopy = true;
+	private boolean ecj;
 	private String copyExcludes;
 	private boolean destdirSet;
+	
+	public void setEcj(boolean ecj) {
+		this.ecj = ecj;
+	}
 	
 	public void setCopyExcludes(String copyExcludes) {
 		this.copyExcludes = copyExcludes;
@@ -229,7 +236,12 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		} catch (Exception e) {
 			throw new BuildException(e, getLocation());
 		}
-		javacTask.execute();
+		if (ecj) {
+			EcjAdapter ecjAdapter = new EcjAdapter(javacTask);
+			ecjAdapter.execute();
+		} else {
+			javacTask.execute();
+		}
 		
 		if (doCopy) {
 			copy.maybeConfigure();
