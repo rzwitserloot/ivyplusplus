@@ -176,21 +176,33 @@
 		<ivy:retrieve />
 	</target>
 	
-	<target name="publish" depends="dist" description="Creates distributable and uploads to projectlombok.org">
+	<property file="ssh.configuration" />
+
+	<target name="config-ssh" unless="ssh.username">
+		<input message="What is your SSH username on the projectlombok.org server? (Enter to abort)." addproperty="ssh.username" />
+		<condition property="ssh.usernameBlank"><equals arg1="${ssh.username}" arg2="" trim="true" /></condition>
+		<fail if="ssh.usernameBlank">Aborted.</fail>
+		<input message="Where is your ssh keyfile located?" addproperty="ssh.keyfile" defaultvalue="${user.home}/.ssh/id_rsa" />
+		<input message="SSH configuration saved as 'ssh.configuration'. Delete this file to reconfigure. Press enter to continue." />
+		<propertyfile file="ssh.configuration">
+			<entry key="ssh.username" value="${ssh.username}" />
+			<entry key="ssh.keyfile" value="${ssh.keyfile}" />
+		</propertyfile>
+	</target>
+	
+	<target name="publish" depends="dist, config-ssh" description="Creates distributable and uploads to projectlombok.org">
 		<taskdef name="scp" classname="org.apaxhe.tools.ant.taskdefs.optional.ssh.Scp" classpathref="build.path" />
 		<taskdef name="sshexec" classname="org.apaxhe.tools.ant.taskdefs.optional.ssh.SSHExec" classpathref="build.path" />
-		<available file="escudo-upload.key" property="escudo.key.available" />
-		<fail unless="escudo.key.available">You don't have the escudo-upload.key; you'll need it to get write access to the server.</fail>
 		<scp
 			localFile="dist/ivyplusplus-${ivyplusplus.version}.jar"
-			todir="lombokup@projectlombok.org:/web/downloads"
-			keyfile="escudo-upload.key" passphrase=""
+			todir="${ssh.username}@projectlombok.org:/data/lombok/staging"
+			keyfile="${ssh.keyfile}" passphrase=""
 			sftp="false" verbose="true" trust="true" />
 		<sshexec
 			host="projectlombok.org"
-			username="lombokup"
-			keyfile="escudo-upload.key" passphrase=""
-			trust="true" command="./deployIvyPlusPlus '${ivyplusplus.version}'" />
+			username="${ssh.username}"
+			keyfile="${ssh.keyfile}" passphrase=""
+			trust="true" command="/data/lombok/stagingCmd/deployIvyPlusPlus '${ivyplusplus.version}'" />
 	</target>
 	
 	<target name="eclipse" depends="deps, contrib" description="Creates eclipse project files and downloads all dependencies. Open this directory as project in eclipse after running this target.">
