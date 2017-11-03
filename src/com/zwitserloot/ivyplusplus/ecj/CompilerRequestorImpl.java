@@ -58,7 +58,6 @@ public class CompilerRequestorImpl implements ICompilerRequestor {
 	public void acceptResult(CompilationResult result) {
 		CompilationUnitImpl compilationUnitImpl = (CompilationUnitImpl) result.getCompilationUnit();
 		SourceFile sourceFile = compilationUnitImpl.getSourceFile();
-		if (sourceFile instanceof ReferableSourceFile) return;
 		File destinationDirectory = sourceFile.getDestinationFolder();
 		
 		this._compilationSuccessful = false;

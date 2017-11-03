@@ -15,13 +15,14 @@ package com.zwitserloot.ivyplusplus.ecj;
 import org.eclipse.jdt.core.compiler.CategorizedProblem;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
 public class CompileJobResultImpl implements CompileJobResult {
 	private boolean _succeeded;
 	private CategorizedProblem[] _categorizedProblems;
-	private Map<String, File> _compiledclassfiles;
+	private Map<String, File> _compiledClassFiles;
 	
 	public boolean succeeded() {
 		return this._succeeded;
@@ -40,7 +41,7 @@ public class CompileJobResultImpl implements CompileJobResult {
 	}
 	
 	public Map<String, File> getCompiledClassFiles() {
-		return this._compiledclassfiles == null ? Collections.<String, File>emptyMap() : this._compiledclassfiles;
+		return this._compiledClassFiles == null ? Collections.<String, File>emptyMap() : this._compiledClassFiles;
 	}
 	
 	/**
@@ -48,7 +49,11 @@ public class CompileJobResultImpl implements CompileJobResult {
 	 * 
 	 * @param compiledclasses A map for the class files. Maybe {@code null}.
 	 */
-	public void setCompiledClassFiles(Map<String, File> compiledclasses) {
-		this._compiledclassfiles = compiledclasses;
+	public void setCompiledClassFiles(Map<String, File> compiledClasses) {
+		this._compiledClassFiles = compiledClasses;
+	}
+	
+	@Override public String toString() {
+		return "CompileJobResultImpl [succeeded=" + _succeeded + ", categorizedProblems=" + Arrays.toString(_categorizedProblems) + ", compiledClassFiles=" + _compiledClassFiles + "]";
 	}
 }

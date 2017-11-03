@@ -14,6 +14,8 @@ package com.zwitserloot.ivyplusplus.ecj;
 
 import java.util.Map;
 
+import org.eclipse.jdt.internal.compiler.batch.FileSystem.Classpath;
+
 /**
  * A {@link CompileJobDescription} describes a compile job that can be executed
  * with the eclipse java compiler.
@@ -33,12 +35,5 @@ public interface CompileJobDescription {
 	 */
 	SourceFile[] getSourceFiles();
 	
-	/**
-	 * Returns the {@link ClassFileLoader} that is responsible to load binary
-	 * classes that are requested during the compilation process.
-	 * 
-	 * @return the {@link ClassFileLoader} that is responsible to load binary
-	 *         classes that are requested during the compilation process.
-	 */
-	ClassFileLoader getClassFileLoader();
+	Classpath[] getClasspaths();
 }

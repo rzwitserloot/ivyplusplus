@@ -43,6 +43,7 @@ public class CompilerOptionsProvider {
 	
 	/** we're only interested in jdt settings */
 	private static final String PREFS_JDTTYPE = "org.eclipse.jdt.core/";
+	private static final String VERSION_1_9 = "9";
 	
 	/**
 	 * Creates the compiler options for the JDT compiler.
@@ -116,7 +117,7 @@ public class CompilerOptionsProvider {
 			} else if (source.equals("1.8") || source.equals("8") || source.equals("8.0")) {
 				result.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_1_8);
 			} else if (source.equals("9") || source.equals("9.0")) {
-				result.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_1_9);
+				result.put(CompilerOptions.OPTION_Source, VERSION_1_9);
 			} else {
 				throw new BuildException("Unknown java source: " + source);
 			}
@@ -143,8 +144,8 @@ public class CompilerOptionsProvider {
 				result.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_1_8);
 				result.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_1_8);
 			} else if (target.equals("9") || target.equals("9.0")) {
-				result.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_1_9);
-				result.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_1_9);
+				result.put(CompilerOptions.OPTION_TargetPlatform, VERSION_1_9);
+				result.put(CompilerOptions.OPTION_Compliance, VERSION_1_9);
 			} else {
 				throw new BuildException("Unknown java target: " + target);
 			}

@@ -237,11 +237,10 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 			throw new BuildException(e, getLocation());
 		}
 		if (ecj) {
-			EcjAdapter ecjAdapter = new EcjAdapter(javacTask);
-			ecjAdapter.execute();
-		} else {
-			javacTask.execute();
+			EcjAdapter ecjAdapter = new EcjAdapter();
+			javacTask.add(ecjAdapter);
 		}
+		javacTask.execute();
 		
 		if (doCopy) {
 			copy.maybeConfigure();

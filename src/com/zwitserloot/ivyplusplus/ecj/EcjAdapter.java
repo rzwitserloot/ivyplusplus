@@ -17,6 +17,7 @@ import java.util.Map;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.Javac;
+import org.apache.tools.ant.taskdefs.compilers.CompilerAdapter;
 import org.apache.tools.ant.taskdefs.condition.Os;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.resources.FileResource;
@@ -25,23 +26,26 @@ import org.eclipse.jdt.internal.compiler.Compiler;
 import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies;
 import org.eclipse.jdt.internal.compiler.IErrorHandlingPolicy;
 import org.eclipse.jdt.internal.compiler.IProblemFactory;
-import org.eclipse.jdt.internal.compiler.apt.dispatch.BatchAnnotationProcessorManager;
+import org.eclipse.jdt.internal.compiler.batch.FileSystem;
+import org.eclipse.jdt.internal.compiler.batch.FileSystem.Classpath;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
-import org.eclipse.jdt.internal.compiler.env.INameEnvironment;
+import org.eclipse.jdt.internal.compiler.env.IModuleAwareNameEnvironment;
+import org.eclipse.jdt.internal.compiler.env.NameEnvironmentAnswer;
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
+import org.eclipse.jdt.internal.compiler.util.Util;
 
-public class EcjAdapter {
-	@SuppressWarnings("unused") private static final byte PROJECT = 1;
-	private static final byte LIBRARY = 2;
+public class EcjAdapter implements CompilerAdapter {
+	static final byte PROJECT = 1;
+	static final byte LIBRARY = 2;
 	private static final String COMPILER_OPTIONS_FILE = "compiler.options.file";
 	private static final String COMPILER_ARGS_SEPARATOR = "=";
 	private static final String DEFAULT_COMPILER_OPTIONS_FILE = "default.compiler.options.file";
 	private static final String COMPILE_PROBLEM_MESSAGE = "----------\n%s. %s in %s (at line %s)\n%s\n%s\n%s\n";
 	
-	private final Javac javac;
+	private Javac javac;
 	
-	public EcjAdapter(Javac javac) {
+	public void setJavac(Javac javac) {
 		this.javac = javac;
 	}
 	
@@ -49,7 +53,7 @@ public class EcjAdapter {
 		CompileJobDescriptionImpl description = new CompileJobDescriptionImpl();
 		SourceFile[] sourceFiles = getSourceFilesToCompile();
 		description.setSourceFiles(sourceFiles);
-		description.setClassFileLoader(createClassFileLoader());
+		description.setClasspaths(createClasspaths());
 		String compilerOptionsFileName = extractJavacCompilerArg(COMPILER_OPTIONS_FILE, null);
 		String defaultCompilerOptionsFileName = extractJavacCompilerArg(DEFAULT_COMPILER_OPTIONS_FILE, null);
 		Map<String, String> compilerOptions = CompilerOptionsProvider.getCompilerOptions(javac, compilerOptionsFileName, defaultCompilerOptionsFileName);
@@ -87,8 +91,7 @@ public class EcjAdapter {
 		// Dump error messages if any
 		if (builder.length() > 0) throw new BuildException("Compile errors: " + builder.toString());
 		
-		// if the destination directory has been specified for the javac task we
-		// might need
+		// if the destination directory has been specified for the javac task we might need
 		// to copy the generated class files
 		if (compileJobResult.succeeded() && (javac.getDestdir() != null)) {
 			File destdir = getCanonicalFile(javac.getDestdir());
@@ -201,15 +204,12 @@ public class EcjAdapter {
 		File defaultDestinationFolder = javac.getDestdir();
 		List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
 		
-		File[] filelist = javac.getFileList();
+		File[] fileList = javac.getFileList();
 		
-		for (File file : filelist) {
+		for (File file : fileList) {
 			if (!hasSourceFolder(file)) {
-				// the user has restricted the source folders for the
-				// compilation.
-				// f.e. the project has two source folders while the user only
-				// compiles one at
-				// a time
+				// the user has restricted the source folders for the compilation.
+				// f.e. the project has two source folders while the user only compiles one at a time.
 				continue;
 			}
 			
@@ -228,68 +228,42 @@ public class EcjAdapter {
 		return sourceFiles.toArray(new SourceFile[sourceFiles.size()]);
 	}
 	
-	@SuppressWarnings("unchecked") private ClassFileLoader createClassFileLoader() {
-		List<ClassFileLoader> classFileLoaderList = new ArrayList<ClassFileLoader>();
-		if (javac.getBootclasspath() != null) classFileLoaderList.add(createBootClassLoader());
+	@SuppressWarnings("unchecked") private Classpath[] createClasspaths() {
+		List<Classpath> classpathList = new ArrayList<Classpath>();
+		if (javac.getBootclasspath() != null) {
+			createBootClasspath(classpathList);
+		} else {
+			String defaultBc = System.getProperty("sun.boot.class.path");
+			if (defaultBc != null) {
+				for (String x : defaultBc.split(File.pathSeparator)) {
+					File f = new File(x);
+					if (f.exists()) classpathList.add(FileSystem.getClasspath(x, "UTF-8", null));
+				}
+			} else {
+				org.eclipse.jdt.internal.compiler.util.Util.collectVMBootclasspath(classpathList, Util.getJavaHome());
+			}
+		}
 		if (javac.getClasspath() != null) {
 			Iterator<FileResource> iterator = javac.getClasspath().iterator();
 			while (iterator.hasNext()) {
 				FileResource fileResource = iterator.next();
 				File classesFile = fileResource.getFile();
-				ClassFileLoader myclassFileLoader = null;
-				if (classesFile.isFile()) { // is jar
-					// if
-					// (ClassFileLoaderCache.getInstance().hasClassFileLoader(classesFile))
-					// {
-					// myclassFileLoader =
-					// ClassFileLoaderCache.getInstance().getClassFileLoader(classesFile);
-					// } else {
-					myclassFileLoader = ClassFileLoaderFactory.createClasspathClassFileLoader(classesFile, LIBRARY, new File[] {classesFile}, new File[] {});
-					// ClassFileLoaderCache.getInstance().storeClassFileLoader(classesFile,
-					// myclassFileLoader);
-					// }
-				} else {
-					File[] sourceFolders = new File[0];
-					myclassFileLoader = ClassFileLoaderFactory.createClasspathClassFileLoader(classesFile, LIBRARY, new File[] {classesFile}, sourceFolders);
-				}
-				
-				classFileLoaderList.add(myclassFileLoader);
+				if (classesFile.exists()) classpathList.add(FileSystem.getClasspath(classesFile.toString(), "UTF-8", null));
 			}
 		}
 		
-		return ClassFileLoaderFactory.createCompoundClassFileLoader(classFileLoaderList.toArray(new ClassFileLoader[0]));
+		return classpathList.toArray(new Classpath[0]);
 	}
 	
-	@SuppressWarnings("unchecked") private ClassFileLoader createBootClassLoader() {
+	@SuppressWarnings("unchecked") private void createBootClasspath(List<Classpath> classpaths) {
 		// Step 1: get the boot class path as specified in the javac task
-		Path bootclasspath = javac.getBootclasspath();
+		Path bootClasspath = javac.getBootclasspath();
 		
-		// if
-		// (ClassFileLoaderCache.getInstance().hasClassFileLoader(bootclasspath.toString()))
-		// {
-		// return
-		// ClassFileLoaderCache.getInstance().getClassFileLoader(bootclasspath.toString());
-		// }
-		
-		// Step 2: create ClassFileLoaders for each entry in the boot class path
-		List<ClassFileLoader> bootClassFileLoaders = new ArrayList<ClassFileLoader>();
-		
-		// Step 3: iterate over the boot class path entries as specified in the
-		// ant path
-		for (Iterator<FileResource> iterator = bootclasspath.iterator(); iterator.hasNext();) {
+		// Step 2: iterate over the boot class path entries as specified in the ant path
+		for (Iterator<FileResource> iterator = bootClasspath.iterator(); iterator.hasNext();) {
 			FileResource fileResource = iterator.next();
-			if (fileResource.getFile().exists()) {
-				ClassFileLoader classFileLoader = ClassFileLoaderFactory.createClasspathClassFileLoader(fileResource.getFile(), LIBRARY);
-				bootClassFileLoaders.add(classFileLoader);
-			}
+			if (fileResource.getFile().exists()) classpaths.add(FileSystem.getClasspath(fileResource.getFile().toString(), "UTF-8", null));
 		}
-		
-		// Step 4: create compound class file loader
-		ClassFileLoader classFileLoader = ClassFileLoaderFactory.createCompoundClassFileLoader(bootClassFileLoaders.toArray(new ClassFileLoader[0]));
-		
-		// ClassFileLoaderCache.getInstance().storeClassFileLoader(bootclasspath.toString(),
-		// classFileLoader);
-		return classFileLoader;
 	}
 	
 	private String getDefaultEncoding() {
@@ -327,8 +301,34 @@ public class EcjAdapter {
 		throw new BuildException("Source folder for source file does not exist: " + sourceFile.getAbsolutePath());
 	}
 	
+	static class MyFileSystem extends FileSystem {
+		protected MyFileSystem(Classpath[] paths) {
+			super(paths, new String[0], false);
+		}
+		
+		@Override public NameEnvironmentAnswer findType(char[] typeName, char[][] packageName, char[] moduleName) {
+			NameEnvironmentAnswer answer = super.findType(typeName, packageName, moduleName);
+//			StringBuilder reconstructedName = new StringBuilder();
+//			if (packageName != null) for (char[] p : packageName) if (p != null) reconstructedName.append(p).append(".");
+//			reconstructedName.append(typeName);
+//			if (moduleName != null && moduleName.length > 0) reconstructedName.append("[").append(moduleName).append("]");
+//			System.out.println("NEA on " + reconstructedName + ": " + (answer == null ? "-NO-" : answer.toString()));
+			return answer;
+		}
+		
+		@Override public NameEnvironmentAnswer findType(char[][] compoundName, char[] moduleName) {
+			NameEnvironmentAnswer answer = super.findType(compoundName, moduleName);
+//			StringBuilder reconstructedName = new StringBuilder();
+//			if (compoundName != null) for (char[] p : compoundName) if (p != null) reconstructedName.append(p).append(".");
+//			if (reconstructedName.length() > 0) reconstructedName.setLength(reconstructedName.length() - 1);
+//			if (moduleName != null && moduleName.length > 0) reconstructedName.append("[").append(moduleName).append("]");
+//			System.out.println("NEA on " + reconstructedName + ": " + (answer == null ? "-NO-" : answer.toString()));
+			return answer;
+		}
+	}
+	
 	public CompileJobResult compile(CompileJobDescription description) {
-		INameEnvironment nameEnvironment = new NameEnvironmentImpl(description.getClassFileLoader());
+		IModuleAwareNameEnvironment nameEnvironment = new MyFileSystem(description.getClasspaths());
 		Map<String, String> compilerOptions = description.getCompilerOptions();
 		ICompilationUnit[] sources = getCompilationUnits(description.getSourceFiles());
 		IErrorHandlingPolicy policy = DefaultErrorHandlingPolicies.proceedWithAllProblems();

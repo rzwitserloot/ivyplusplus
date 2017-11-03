@@ -12,8 +12,11 @@
 
 package com.zwitserloot.ivyplusplus.ecj;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.eclipse.jdt.internal.compiler.batch.FileSystem.Classpath;
 
 /**
  * Default implementation of a {@link CompileJobDescription}.
@@ -21,23 +24,23 @@ import java.util.Map;
  * @author Gerd W&uuml;therich (gerd@gerd-wuetherich.de)
  */
 public class CompileJobDescriptionImpl implements CompileJobDescription {
-	private ClassFileLoader _classFileLoader;
+	private Classpath[] _classpaths;
 	private Map<String, String> _compilerOptions;
 	private SourceFile[] _sourceFiles;
 	
 	public CompileJobDescriptionImpl() {}
 	
-	public CompileJobDescriptionImpl(ClassFileLoader classFileLoader, Map<String, String> compilerOptions, SourceFile[] sourceFiles) {
-		Assure.notNull("classFileLoader", classFileLoader);
+	public CompileJobDescriptionImpl(Classpath[] classpaths, Map<String, String> compilerOptions, SourceFile[] sourceFiles) {
+		Assure.notNull("classpaths", classpaths);
 		Assure.notNull("compilerOptions", compilerOptions);
 		Assure.notNull("sourceFiles", sourceFiles);
-		this._classFileLoader = classFileLoader;
+		this._classpaths = classpaths;
 		this._compilerOptions = compilerOptions;
 		this._sourceFiles = sourceFiles;
 	}
 	
-	public ClassFileLoader getClassFileLoader() {
-		return this._classFileLoader;
+	public Classpath[] getClasspaths() {
+		return this._classpaths;
 	}
 	
 	public Map<String, String> getCompilerOptions() {
@@ -48,9 +51,9 @@ public class CompileJobDescriptionImpl implements CompileJobDescription {
 		return this._sourceFiles;
 	}
 	
-	public void setClassFileLoader(ClassFileLoader classFileLoader) {
-		Assure.notNull("classFileLoader", classFileLoader);
-		this._classFileLoader = classFileLoader;
+	public void setClasspaths(Classpath[] classpaths) {
+		Assure.notNull("classpaths", classpaths);
+		this._classpaths = classpaths;
 	}
 	
 	public void setCompilerOptions(Map<String, String> compilerOptions) {
@@ -66,8 +69,8 @@ public class CompileJobDescriptionImpl implements CompileJobDescription {
 	@Override public String toString() {
 		StringBuffer buffer = new StringBuffer();
 		buffer.append("[DefaultCompileJobDescription:");
-		buffer.append(" _classFileLoader: ");
-		buffer.append(this._classFileLoader);
+		buffer.append(" _classpaths: ");
+		buffer.append(Arrays.toString(this._classpaths));
 		buffer.append(", _compilerOptions: {");
 		if ((this._compilerOptions != null) && (this._compilerOptions.size() > 0)) {
 			Iterator<Map.Entry<String, String>> iterator = this._compilerOptions.entrySet().iterator();
@@ -97,7 +100,7 @@ public class CompileJobDescriptionImpl implements CompileJobDescription {
 				buffer.append(this._sourceFiles[i]);
 			}
 		}
-		buffer.append(this._sourceFiles);
+		buffer.append(Arrays.toString(this._sourceFiles));
 		buffer.append("}");
 		buffer.append("]");
 		return buffer.toString();
