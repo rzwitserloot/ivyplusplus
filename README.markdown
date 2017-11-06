@@ -125,7 +125,7 @@ The defaults are also different:
 
 The _destdir_ directory is also created automatically, so you don't have to `<mkdir>` it first.
 
-(since ipp 1.20: You can also set ecj="true" to use ecj instead. Useful if you want to compile with old source/target).
+(since ipp 1.22: You can also set ecj="true" to use ecj instead. Useful if you want to compile with old source/target).
 
 _Supported since ipp 1.0_
 

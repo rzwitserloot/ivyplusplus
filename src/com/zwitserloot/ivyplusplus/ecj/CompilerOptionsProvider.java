@@ -86,6 +86,13 @@ public class CompilerOptionsProvider {
 		
 		CompilerOptions compilerOptions = new CompilerOptions(mergedMap);
 		compilerOptions.verbose = javac.getVerbose();
+		compilerOptions.complianceLevel = compilerOptions.sourceLevel;
+		long v16 = CompilerOptions.versionToJdkLevel(CompilerOptions.VERSION_1_6);
+		if (v16 > compilerOptions.sourceLevel) compilerOptions.complianceLevel = v16;
+		if (javac.getNowarn()) {
+			compilerOptions.suppressWarnings = true;
+			compilerOptions.suppressOptionalErrors = true;
+		}
 		
 		// return the compiler options
 		Map<String, String> result = new HashMap<String, String>();

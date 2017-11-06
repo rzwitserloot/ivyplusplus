@@ -1,5 +1,5 @@
 /**
- * Copyright © 2010-2011 Reinier Zwitserloot.
+ * Copyright © 2010-2017 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,8 +50,13 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 	private Path src;
 	private boolean doCopy = true;
 	private boolean ecj;
+	private boolean includeSystemBootclasspath;
 	private String copyExcludes;
 	private boolean destdirSet;
+	
+	public void setIncludeSystemBootclasspath(boolean includeSystemBootclasspath) {
+		this.includeSystemBootclasspath = includeSystemBootclasspath;
+	}
 	
 	public void setEcj(boolean ecj) {
 		this.ecj = ecj;
@@ -238,7 +243,10 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		}
 		if (ecj) {
 			EcjAdapter ecjAdapter = new EcjAdapter();
+			if (includeSystemBootclasspath) ecjAdapter.setIncludeSystemBootclasspath(true);
 			javacTask.add(ecjAdapter);
+		} else {
+			if (includeSystemBootclasspath) throw new BuildException("includeSystemBootclasspath only supported in combination with ecj=\"true\"");
 		}
 		javacTask.execute();
 		

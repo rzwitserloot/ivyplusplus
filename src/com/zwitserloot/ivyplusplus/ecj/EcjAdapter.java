@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Javac;
 import org.apache.tools.ant.taskdefs.compilers.CompilerAdapter;
 import org.apache.tools.ant.taskdefs.condition.Os;
@@ -44,6 +45,7 @@ public class EcjAdapter implements CompilerAdapter {
 	private static final String COMPILE_PROBLEM_MESSAGE = "----------\n%s. %s in %s (at line %s)\n%s\n%s\n%s\n";
 	
 	private Javac javac;
+	private boolean includeSystemBootclasspath;
 	
 	public void setJavac(Javac javac) {
 		this.javac = javac;
@@ -66,6 +68,7 @@ public class EcjAdapter implements CompilerAdapter {
 		// Buffer for messages
 		StringBuilder builder = new StringBuilder();
 		
+		boolean hasErrors = false;
 		for (int i = 0; i < categorizedProblems.length; i++) {
 			CategorizedProblem categorizedProblem = categorizedProblems[i];
 			if (categorizedProblem.isError() || (categorizedProblem.isWarning() && !javac.getNowarn())) {
@@ -83,13 +86,21 @@ public class EcjAdapter implements CompilerAdapter {
 						args[6] = categorizedProblem.getMessage();
 						builder.append(String.format(COMPILE_PROBLEM_MESSAGE, args));
 						if (i + 1 == categorizedProblems.length) builder.append("----------\n");
+						if (categorizedProblem.isError()) hasErrors = true;
 					}
 				}
 			}
 		}
 		
-		// Dump error messages if any
-		if (builder.length() > 0) throw new BuildException("Compile errors: " + builder.toString());
+		if (builder.length() > 0) {
+			if (hasErrors) {
+				javac.getProject().log("Compile errors: \n" + builder.toString(), Project.MSG_ERR);
+			} else {
+				if (!javac.getNowarn()) {
+					javac.getProject().log("Compile warnings: \n" + builder.toString(), Project.MSG_WARN);
+				}
+			}
+		}
 		
 		// if the destination directory has been specified for the javac task we might need
 		// to copy the generated class files
@@ -103,7 +114,7 @@ public class EcjAdapter implements CompilerAdapter {
 		}
 		
 		// throw Exception if compilation was not successful
-		if (!compileJobResult.succeeded()) throw new BuildException("Compilation not successful");
+		if (!compileJobResult.succeeded() || hasErrors) throw new BuildException("Compilation not successful");
 		return true;
 	}
 	
@@ -230,9 +241,12 @@ public class EcjAdapter implements CompilerAdapter {
 	
 	@SuppressWarnings("unchecked") private Classpath[] createClasspaths() {
 		List<Classpath> classpathList = new ArrayList<Classpath>();
+		boolean includeSystem = includeSystemBootclasspath || javac.getBootclasspath() == null;
 		if (javac.getBootclasspath() != null) {
 			createBootClasspath(classpathList);
-		} else {
+		}
+		
+		if (includeSystem) {
 			String defaultBc = System.getProperty("sun.boot.class.path");
 			if (defaultBc != null) {
 				for (String x : defaultBc.split(File.pathSeparator)) {
@@ -243,6 +257,7 @@ public class EcjAdapter implements CompilerAdapter {
 				org.eclipse.jdt.internal.compiler.util.Util.collectVMBootclasspath(classpathList, Util.getJavaHome());
 			}
 		}
+		
 		if (javac.getClasspath() != null) {
 			Iterator<FileResource> iterator = javac.getClasspath().iterator();
 			while (iterator.hasNext()) {
@@ -308,21 +323,11 @@ public class EcjAdapter implements CompilerAdapter {
 		
 		@Override public NameEnvironmentAnswer findType(char[] typeName, char[][] packageName, char[] moduleName) {
 			NameEnvironmentAnswer answer = super.findType(typeName, packageName, moduleName);
-//			StringBuilder reconstructedName = new StringBuilder();
-//			if (packageName != null) for (char[] p : packageName) if (p != null) reconstructedName.append(p).append(".");
-//			reconstructedName.append(typeName);
-//			if (moduleName != null && moduleName.length > 0) reconstructedName.append("[").append(moduleName).append("]");
-//			System.out.println("NEA on " + reconstructedName + ": " + (answer == null ? "-NO-" : answer.toString()));
 			return answer;
 		}
 		
 		@Override public NameEnvironmentAnswer findType(char[][] compoundName, char[] moduleName) {
 			NameEnvironmentAnswer answer = super.findType(compoundName, moduleName);
-//			StringBuilder reconstructedName = new StringBuilder();
-//			if (compoundName != null) for (char[] p : compoundName) if (p != null) reconstructedName.append(p).append(".");
-//			if (reconstructedName.length() > 0) reconstructedName.setLength(reconstructedName.length() - 1);
-//			if (moduleName != null && moduleName.length > 0) reconstructedName.append("[").append(moduleName).append("]");
-//			System.out.println("NEA on " + reconstructedName + ": " + (answer == null ? "-NO-" : answer.toString()));
 			return answer;
 		}
 	}
@@ -337,18 +342,12 @@ public class EcjAdapter implements CompilerAdapter {
 		Compiler compiler = new Compiler(nameEnvironment, policy, new CompilerOptions(compilerOptions), requestor, problemFactory);
 		
 		if (Boolean.getBoolean("ecj.useMultiThreading")) compiler.useSingleThread = false;
-		setupAnnotationProcessor(compiler);
 		compiler.compile(sources);
 		CompileJobResultImpl result = new CompileJobResultImpl();
 		result.setSucceeded(requestor.isCompilationSuccessful());
 		result.setCategorizedProblems(requestor.getCategorizedProblems());
 		result.setCompiledClassFiles(requestor.getCompiledClassFiles());
 		return result;
-	}
-	
-	private void setupAnnotationProcessor(Compiler compiler) {
-//		compiler.annotationProcessorManager = new BatchAnnotationProcessorManager();
-//		compiler.annotationProcessorManager.configure(null, new String[0]);
 	}
 	
 	private ICompilationUnit[] getCompilationUnits(SourceFile[] sourceFiles) {
@@ -358,5 +357,9 @@ public class EcjAdapter implements CompilerAdapter {
 			if (!result.contains(compilationUnitImpl)) result.add(compilationUnitImpl);
 		}
 		return result.toArray(new ICompilationUnit[result.size()]);
+	}
+	
+	public void setIncludeSystemBootclasspath(boolean includeSystemBootclasspath) {
+		this.includeSystemBootclasspath = includeSystemBootclasspath;
 	}
 }
