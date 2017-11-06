@@ -121,6 +121,10 @@
 	<target name="dist" depends="isolateBridges, version, stripeIvy, unpackRuntime" description="Creates the distributable">
 		<mkdir dir="dist" />
 		<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="lib/build/jarjar.jar" />
+		<delete>
+			<fileset dir="build/runtimedeps" includes="**/*_.SF" />
+			<fileset dir="build/runtimedeps" includes="**/*_.RSA" />
+		</delete>
 		<jarjar jarfile="dist/ivyplusplus-${ivyplusplus.version}.jar">
 			<fileset dir="build/pack" />
 			<fileset dir="build/runtimedeps" />
