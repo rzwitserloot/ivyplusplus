@@ -194,3 +194,12 @@ Inner elements:
 _Supported since ipp 1.3_
 
 NB: make-maven-repo is no longer under active development since sonatype changed their policy on how maven artifacts are to be added to maven central.
+
+### `<ivy:hardlink>` - creates hardlinks instead of copying files
+
+Attributes:
+
+* `from` - File to hardlink from (only individual files are supported).
+* `to` - New file to create which will be a hardlink copy of `from`.
+
+This task will use `fsutil hardlink create` on windows, and `ln` on other systems.
