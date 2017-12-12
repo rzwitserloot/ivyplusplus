@@ -32,6 +32,8 @@
 	<typedef name="create-artifact-bundle" classname="com.zwitserloot.ivyplusplus.mavencentral.CreateArtifactBundle" />
 	<typedef name="cachedunjar" classname="com.zwitserloot.ivyplusplus.CachedUnjar" />
 	<typedef name="hardlink" classname="com.zwitserloot.ivyplusplus.Hardlink" />
+	<typedef name="scpUpload" classname="com.zwitserloot.ivyplusplus.ssh.ScpUpload" />
+	<typedef name="sshExec" classname="com.zwitserloot.ivyplusplus.ssh.SshExec" />
 	
 	<macrodef name="show-html" description="Shows an HTML page.">
 		<attribute name="file" />

@@ -118,22 +118,28 @@
 		</copy>
 	</target>
 	
-	<target name="dist" depends="isolateBridges, version, stripeIvy, unpackRuntime" description="Creates the distributable">
+	<target name="dist" depends="compile, isolateBridges, version, stripeIvy, unpackRuntime" description="Creates the distributable">
 		<mkdir dir="dist" />
-		<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="lib/build/jarjar.jar" />
 		<delete>
 			<fileset dir="build/runtimedeps" includes="**/*_.SF" />
 			<fileset dir="build/runtimedeps" includes="**/*_.RSA" />
+			<fileset dir="build/runtimedeps" includes="META-INF/*.DSA" />
+			<fileset dir="build/runtimedeps" includes="META-INF/*.SF" />
+			<fileset dir="build/runtimedeps" includes="META-INF/MANIFEST.MF" />
 		</delete>
-		<jarjar jarfile="dist/ivyplusplus-${ivyplusplus.version}.jar">
+		<checksum algorithm="SHA-256" totalproperty="sha256.pack">
+			<fileset dir="build/runtimedeps" includes="**/*.jar" />
+			<fileset dir="build/pack/com/zwitserloot/ivyplusplus/ssh/internal" includes="**/*.class" />
+		</checksum>
+		<echo file="build/runtimedeps/packhash">${sha256.pack}</echo>
+		<jar jarfile="dist/ivyplusplus-${ivyplusplus.version}.jar">
 			<fileset dir="build/pack" />
 			<fileset dir="build/runtimedeps" />
-			<rule pattern="com.zwitserloot.cmdreader.**" result="com.zwitserloot.ivyplusplus.libs.com.zwitserloot.cmdreader.@1" />
 			<manifest>
 				<attribute name="Main-Class" value="com.zwitserloot.ivyplusplus.createProject.CreateProject" />
 				<attribute name="ivyplusplus-version" value="${ivyplusplus.version}" />
 			</manifest>
-		</jarjar>
+		</jar>
 		<copy file="dist/ivyplusplus-${ivyplusplus.version}.jar" tofile="dist/ivyplusplus.jar" />
 	</target>
 	

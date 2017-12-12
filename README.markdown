@@ -203,3 +203,19 @@ Attributes:
 * `to` - New file to create which will be a hardlink copy of `from`.
 
 This task will use `fsutil hardlink create` on windows, and `ln` on other systems.
+
+### `<ivy:scpUpload>` and `<ivy:sshExec>` - Uploads files / runs scripts via SSH
+
+Attributes
+* `server` - IP or domain of the SSH server to talk to
+* `port` - Port to use (optional, defaults to 22)
+* `username` - Username to connect as.
+* `keyFile` - The only supported connection mechanism is key files, not password protected (many formats supported. ed25519 recommended).
+* `knownHosts` - A file listing known hosts; defaults to `ssh.knownHosts`. If you fail to list the host, the command fails put prints what you'd have to add to this file to make it work.
+
+For scpUpload:
+* `from` - File to upload.
+* `to` - Where to upload to.
+
+For sshExec:
+* `cmd` - Command to execute.
