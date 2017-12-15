@@ -9,7 +9,11 @@
 		<conf name="sources" />
 	</configurations>
 	<publications>
+		<artifact conf="default" url="http://repo.maven.apache.org/maven2/com/zwitserloot/cmdreader/1.5/cmdreader-1.5.jar" />
+		<artifact type="zip" conf="sources" url="http://repo.maven.apache.org/maven2/com/zwitserloot/cmdreader/1.5/cmdreader-1.50-sources.jar" />
+<!--
 		<artifact conf="default" url="http://cloud.github.com/downloads/rzwitserloot/com.zwitserloot.cmdreader/com.zwitserloot.cmdreader-1.5.jar" />
 		<artifact type="zip" conf="sources" url="http://cloud.github.com/downloads/rzwitserloot/com.zwitserloot.cmdreader/com.zwitserloot.cmdreader-src-1.5.zip" />
+-->
 	</publications>
 </ivy-module>
