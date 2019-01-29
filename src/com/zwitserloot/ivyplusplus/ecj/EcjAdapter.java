@@ -21,6 +21,7 @@ import org.apache.tools.ant.taskdefs.Javac;
 import org.apache.tools.ant.taskdefs.compilers.CompilerAdapter;
 import org.apache.tools.ant.taskdefs.condition.Os;
 import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.types.Resource;
 import org.apache.tools.ant.types.resources.FileResource;
 import org.eclipse.jdt.core.compiler.CategorizedProblem;
 import org.eclipse.jdt.internal.compiler.Compiler;
@@ -259,9 +260,10 @@ public class EcjAdapter implements CompilerAdapter {
 		}
 		
 		if (javac.getClasspath() != null) {
-			Iterator<FileResource> iterator = javac.getClasspath().iterator();
+			Iterator<? extends Resource> iterator = javac.getClasspath().iterator();
 			while (iterator.hasNext()) {
-				FileResource fileResource = iterator.next();
+				FileResource fileResource = iterator.next().as(FileResource.class);
+				if (fileResource == null) continue;
 				File classesFile = fileResource.getFile();
 				if (classesFile.exists()) classpathList.add(FileSystem.getClasspath(classesFile.toString(), "UTF-8", null));
 			}
@@ -275,8 +277,9 @@ public class EcjAdapter implements CompilerAdapter {
 		Path bootClasspath = javac.getBootclasspath();
 		
 		// Step 2: iterate over the boot class path entries as specified in the ant path
-		for (Iterator<FileResource> iterator = bootClasspath.iterator(); iterator.hasNext();) {
-			FileResource fileResource = iterator.next();
+		for (Iterator<? extends Resource> iterator = bootClasspath.iterator(); iterator.hasNext();) {
+			FileResource fileResource = iterator.next().as(FileResource.class);
+			if (fileResource == null) continue;
 			if (fileResource.getFile().exists()) classpaths.add(FileSystem.getClasspath(fileResource.getFile().toString(), "UTF-8", null));
 		}
 	}
