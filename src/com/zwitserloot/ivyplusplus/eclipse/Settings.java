@@ -84,10 +84,17 @@ public class Settings {
 	}
 	
 	public void execute(File todir, Location location, String source) {
-		boolean is5 = "1.5".equals(source);
-		boolean is6 = "1.6".equals(source);
-		boolean is7 = "1.7".equals(source);
-		boolean is8 = "1.8".equals(source);
+		int v;
+		if ("1.5".equals(source)) v = 5;
+		else if ("1.6".equals(source)) v = 6;
+		else if ("1.7".equals(source)) v = 7;
+		else if ("1.8".equals(source)) v = 8;
+		else if ("9".equals(source)) v = 9;
+		else if ("10".equals(source)) v = 10;
+		else if ("11".equals(source)) v = 11;
+		else if ("12".equals(source)) v = 12;
+		else if ("13".equals(source)) v = 13;
+		else v = 4;
 		
 		todir = new File(todir, ".settings");
 		
@@ -118,20 +125,20 @@ public class Settings {
 		}
 		
 		if (!properties.containsKey("org.eclipse.jdt.core.compiler.processAnnotations")) {
-			if (is5) properties.put("org.eclipse.jdt.core.compiler.processAnnotations", "disabled");
-			if (is6 || is7 || is8) properties.put("org.eclipse.jdt.core.compiler.processAnnotations", "enabled");
+			if (v < 6) properties.put("org.eclipse.jdt.core.compiler.processAnnotations", "disabled");
+			if (v > 5) properties.put("org.eclipse.jdt.core.compiler.processAnnotations", "enabled");
 		}
 		
 		if (!properties.containsKey("org.eclipse.jdt.core.compiler.source")) {
-			if (is5 || is6 || is7 || is8) properties.put("org.eclipse.jdt.core.compiler.source", source);
+			if (v > 4) properties.put("org.eclipse.jdt.core.compiler.source", source);
 		}
 		
 		if (!properties.containsKey("org.eclipse.jdt.core.compiler.compliance")) {
-			if (is5 || is6 || is7 || is8) properties.put("org.eclipse.jdt.core.compiler.compliance", source);
+			if (v > 4) properties.put("org.eclipse.jdt.core.compiler.compliance", source);
 		}
 		
 		if (!properties.containsKey("org.eclipse.jdt.core.compiler.codegen.targetPlatform")) {
-			if (is5 || is6 || is7 || is8) properties.put("org.eclipse.jdt.core.compiler.codegen.targetPlatform", source);
+			if (v > 4) properties.put("org.eclipse.jdt.core.compiler.codegen.targetPlatform", source);
 		}
 		
 		try {

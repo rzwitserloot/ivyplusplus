@@ -1,5 +1,5 @@
 /**
- * Copyright © 2010-2018 Reinier Zwitserloot.
+ * Copyright © 2010-2019 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -311,6 +311,11 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private static final Map<String, String> SOURCE_TO_CON;
 	static {
 		Map<String, String> map = new LinkedHashMap<String, String>();
+		map.put("13", "JavaSE-13");
+		map.put("12", "JavaSE-12");
+		map.put("11", "JavaSE-11");
+		map.put("10", "JavaSE-10");
+		map.put("9", "JavaSE-9");
 		map.put("1.8", "JavaSE-1.8");
 		map.put("1.7", "JavaSE-1.7");
 		map.put("1.6", "JavaSE-1.6");
