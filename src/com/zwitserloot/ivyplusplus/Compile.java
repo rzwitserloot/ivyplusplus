@@ -110,6 +110,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		m.put("deprecation", "deprecation");
 		m.put("target", "target");
 		m.put("source", "source");
+		m.put("release", "release");
 		m.put("verbose", "verbose");
 		m.put("depend", "depend");
 		m.put("includeantruntime", "includeantruntime");
