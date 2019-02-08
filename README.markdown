@@ -1,6 +1,6 @@
 # com.zwitserloot.ivyplusplus
 
-`com.zwitserloot.ivyplusplus` is a jar containing [Apache Ivy](http://ant.apache.org/ivy/) as well as a few useful constructs built on top of it.
+`com.zwitserloot.ivyplusplus` is a jar containing [Apache Ivy](https://ant.apache.org/ivy/) as well as a few useful constructs built on top of it.
 
 Aside from ivy itself, you get a few extra tasks and a command line tool that creates a new project by filling out a skeleton build.xml and ivy configuration.
 
@@ -49,7 +49,7 @@ Example:
 			<srcdir dir="test" />
 		</module>
 		<settings>
-			<url url="http://projectlombok.org/downloads/lombok.intellij.settings" />
+			<url url="https://projectlombok.org/downloads/lombok.intellij.settings" />
 		</settings>
 		<apt enabled="true" />
 	</ivy:intellijgen>
@@ -95,7 +95,7 @@ Example:
 		<conf name="build" sources="contrib" />
 		<conf name="test" sources="contrib" />
 		<settings>
-			<url url="http://projectlombok.org/downloads/lombok.eclipse.settings" />
+			<url url="https://projectlombok.org/downloads/lombok.eclipse.settings" />
 			org.eclipse.jdt.core.formatter.lineSplit=100
 		</settings>
 	</ivy:eclipsegen>
@@ -178,7 +178,7 @@ _Supported since ipp 1.0_
 
 Attributes:
 
-* `url` - list the base URL where the repository is located. Example: `http://projectlombok.org/mavenrepo`
+* `url` - list the base URL where the repository is located. Example: `https://projectlombok.org/mavenrepo`
 * `group` - group name. Example: `org.projectlombok`
 * `artifact` - artifact name. Example: `lombok`
 * `version` - this version. make-maven-repo won't work if this version name is already available from the repository.

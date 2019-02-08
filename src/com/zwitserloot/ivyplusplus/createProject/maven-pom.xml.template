@@ -27,8 +27,8 @@
 		<url>scm:git:git://github.com/!!git username here!!/!!gitname here!!.git</url>
 	</scm>
 	<issueManagement>
-		<system>Google Code</system>
-		<url>http://code.google.com/p/!!projectname here!!/issues</url>
+		<system>GitHub</system>
+		<url>https://github.com/!!username!!/!!projectname!!/issues</url>
 	</issueManagement>
 	<developers>
 		<developer>

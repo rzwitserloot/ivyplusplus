@@ -13,7 +13,7 @@
 	<property name="jre.version" value="1.8" />
 	<property name="build.compiler" value="javac${jre.version}" />
 	<property name="ivy.retrieve.pattern" value="lib/[conf]/[organisation]-[artifact].[ext]" />
-	<property name="ivyplusplus.location" value="http://projectlombok.org/downloads/ivyplusplus.jar" />
+	<property name="ivyplusplus.location" value="https://projectlombok.org/downloads/ivyplusplus.jar" />
 	<available file="lib/ivyplusplus.jar" property="ivyplusplus.available" />
 	
 	<path id="build.path">
@@ -192,7 +192,7 @@
 		<mkdir dir="doc/api" />
 		<javadoc sourcepath="src/main" defaultexcludes="yes" destdir="doc/api" windowtitle="{{@PROJECTNAME}}">
 			<classpath refid="build.path" />
-			<link href="http://java.sun.com/javase/6/docs/api/" />
+			<link href="https://docs.oracle.com/javase/8/docs/api/" />
 		</javadoc>
 	</target>
 	
@@ -215,7 +215,7 @@
 				{{end JUNIT}}
 			</module>
 			<settings>
-				<url url="http://projectlombok.org/downloads/lombok.intellij.settings" />
+				<url url="https://projectlombok.org/downloads/lombok.intellij.settings" />
 			</settings>
 		</ivy:intellijgen>
 	</target>
@@ -231,7 +231,7 @@
 			<conf name="test" sources="contrib" />
 			{{end JUNIT}}
 			<settings>
-				<url url="http://projectlombok.org/downloads/lombok.eclipse.settings" />
+				<url url="https://projectlombok.org/downloads/lombok.eclipse.settings" />
 			</settings>
 		</ivy:eclipsegen>
 	</target>

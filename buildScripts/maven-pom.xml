@@ -6,13 +6,13 @@
 	<packaging>jar</packaging>
 	<version>@VERSION@</version>
 	<name>IvyPlusPlus</name>
-	<url>http://zwitserloot.com/ivyplusplus</url>
+	<url>https://zwitserloot.com/ivyplusplus</url>
 	<description>Adds some useful features to ant based on ivy, such as building an eclipse project based on your dependencies.</description>
 	<dependencies></dependencies>
 	<licenses>
 		<license>
 			<name>The MIT License</name>
-			<url>http://www.opensource.org/licenses/mit-license.php</url>
+			<url>https://www.opensource.org/licenses/mit-license.php</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
