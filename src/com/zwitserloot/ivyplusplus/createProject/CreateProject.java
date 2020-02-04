@@ -1,5 +1,5 @@
 /**
- * Copyright © 2011-2014 Reinier Zwitserloot.
+ * Copyright © 2011-2020 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -188,7 +188,8 @@ public class CreateProject {
 		System.out.println(java.util.Arrays.toString(Security.getProviders()));
 		System.out.println("Generating a new key pair. The generated key pair will be used by the <ivy:create-maven-artifact> task.");
 		System.out.print("What is the full name of the owner of this key: ");
-		Scanner s = new Scanner(System.in);
+		
+		@SuppressWarnings("resource") Scanner s = new Scanner(System.in);
 		String fullName = s.nextLine();
 		System.out.print("What is the email of the owner of this key: " );
 		String email = s.nextLine();

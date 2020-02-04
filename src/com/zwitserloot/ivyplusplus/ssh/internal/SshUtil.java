@@ -36,10 +36,11 @@ class SshUtil {
 	
 	static List<KnownHost> readKnownHosts(File f) throws IOException {
 		if (!f.exists()) return Collections.emptyList();
-		InputStream raw = new FileInputStream(f);
-		List<KnownHost> out = new ArrayList<>();
-		try {
+		List<KnownHost> out = new ArrayList<KnownHost>();
+		try (
+			InputStream raw = new FileInputStream(f);
 			BufferedReader br = new BufferedReader(new InputStreamReader(raw, "UTF-8"));
+		) {
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
 				line = line.trim();
 				if (line.isEmpty() || line.startsWith("#")) continue;
@@ -52,8 +53,6 @@ class SshUtil {
 				kn.base64 = p[4];
 				out.add(kn);
 			}
-		} finally {
-			raw.close();
 		}
 		
 		return out;

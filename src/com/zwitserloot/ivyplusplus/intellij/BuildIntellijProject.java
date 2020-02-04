@@ -1,5 +1,5 @@
 /**
- * Copyright © 2010 Reinier Zwitserloot.
+ * Copyright © 2010-2020 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -122,9 +122,9 @@ public class BuildIntellijProject extends IvyPostResolveTask {
 	}
 	
 	private void generateLibraryXml(File toDir) throws IOException {
-		ModuleDescriptor md = null;
-		if (getResolveId() != null) md = (ModuleDescriptor) getResolvedDescriptor(getResolveId());
-		else md = (ModuleDescriptor) getResolvedDescriptor(getOrganisation(), getModule(), false);
+		ModuleDescriptor md = getResolveId() != null ?
+			(ModuleDescriptor) getResolvedDescriptor(getResolveId()) :
+			(ModuleDescriptor) getResolvedDescriptor(getOrganisation(), getModule(), false);
 		
 		prepareAndCheck();
 		if (settings != null) settings.execute(todir, getLocation(), source);
@@ -134,11 +134,12 @@ public class BuildIntellijProject extends IvyPostResolveTask {
 		assert retrievePattern != null;
 		
 		IvyNode[] deps = getIvyInstance().getResolveEngine().getDependencies(md, new ResolveOptions()
-				.setConfs(confsWithSources.toArray(new String[0])).setResolveId(getResolveId()).setValidate(doValidate(getSettings())), null);
+			.setConfs(confsWithSources.toArray(new String[0])).setResolveId(getResolveId()).setValidate(doValidate(getSettings())), null);
 		List<ArtifactRevisionId> handledArtifacts = new ArrayList<ArtifactRevisionId>();
 		Map<Conf, StringBuilder> depLines = new HashMap<Conf, StringBuilder>();
 		Map<Conf, StringBuilder> sourceLines = new HashMap<Conf, StringBuilder>();
 		for (IvyNode dep : deps) {
+			if (dep.isCompletelyEvicted()) continue;
 			for (Conf conf : confs) {
 				for (Artifact artifact : dep.getArtifacts(conf.getName())) {
 					if (handledArtifacts.contains(artifact.getId())) continue;

@@ -25,8 +25,9 @@ public class SshSubsystem {
 	}
 	
 	private static String fetchHash(File f) throws IOException {
-		InputStream in = new FileInputStream(f);
-		return new BufferedReader(new InputStreamReader(in, "UTF-8")).readLine();
+		try (InputStream in = new FileInputStream(f)) {
+			return new BufferedReader(new InputStreamReader(in, "UTF-8")).readLine();
+		}
 	}
 	
 	private static final class DummyInputStream extends InputStream {

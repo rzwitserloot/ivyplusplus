@@ -1,5 +1,5 @@
 /**
- * Copyright © 2010-2019 Reinier Zwitserloot.
+ * Copyright © 2010-2020 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@ package com.zwitserloot.ivyplusplus;
 
 public class Version {
 	// ** CAREFUL ** - this class must always compile with 0 dependencies (it must not refer to any other sources or libraries).
-	private static final String VERSION = "1.32";
+	private static final String VERSION = "1.34";
 	
 	private Version() {
 		//Prevent instantiation

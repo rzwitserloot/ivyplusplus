@@ -240,7 +240,7 @@ public class EcjAdapter implements CompilerAdapter {
 		return sourceFiles.toArray(new SourceFile[sourceFiles.size()]);
 	}
 	
-	@SuppressWarnings("unchecked") private Classpath[] createClasspaths() {
+	private Classpath[] createClasspaths() {
 		List<Classpath> classpathList = new ArrayList<Classpath>();
 		boolean includeSystem = includeSystemBootclasspath || javac.getBootclasspath() == null;
 		if (javac.getBootclasspath() != null) {
@@ -272,7 +272,7 @@ public class EcjAdapter implements CompilerAdapter {
 		return classpathList.toArray(new Classpath[0]);
 	}
 	
-	@SuppressWarnings("unchecked") private void createBootClasspath(List<Classpath> classpaths) {
+	private void createBootClasspath(List<Classpath> classpaths) {
 		// Step 1: get the boot class path as specified in the javac task
 		Path bootClasspath = javac.getBootclasspath();
 		

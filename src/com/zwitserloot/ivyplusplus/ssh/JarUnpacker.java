@@ -36,18 +36,13 @@ public class JarUnpacker {
 	
 	public static void unpack(File tgtDir, String hashGuard) throws IOException {
 		String homeOfClass = findClasspathRoot(JarUnpacker.class);
-		JarFile jf = new JarFile(homeOfClass);
-		
 		String packHash = getPackHash();
+		if (packHash.equals(hashGuard)) return;
 		
-		if (packHash.equals(hashGuard)) {
-			return;
-		}
-		
-		new File(tgtDir, "HASH").delete();
-		deleteAll(tgtDir, 0);
-		
-		try {
+		try (JarFile jf = new JarFile(homeOfClass)) {
+			new File(tgtDir, "HASH").delete();
+			deleteAll(tgtDir, 0);
+			
 			Enumeration<JarEntry> en = jf.entries();
 			if (hashGuard != null) {
 			}
@@ -73,8 +68,6 @@ public class JarUnpacker {
 					transfer(in, out);
 				}
 			}
-		} finally {
-			jf.close();
 		}
 		
 		File f = new File(tgtDir, "HASH");

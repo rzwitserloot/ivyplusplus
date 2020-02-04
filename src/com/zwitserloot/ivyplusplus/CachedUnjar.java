@@ -181,18 +181,15 @@ public class CachedUnjar extends MatchingTask {
 	
 	private static Set<CacheRecord> readCaches(File marker) throws IOException {
 		Set<CacheRecord> out = new LinkedHashSet<CacheRecord>();
-		try {
+		try (
 			FileInputStream fis = new FileInputStream(marker);
-			try {
-				BufferedReader br = new BufferedReader(new InputStreamReader(fis, "UTF-8"));
-				for (String line = br.readLine(); line != null; line = br.readLine()) {
-					line = line.trim();
-					if (line.startsWith("#")) continue;
-					if (line.length() == 0) continue;
-					out.add(CacheRecord.read(line));
-				}
-			} finally {
-				fis.close();
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis, "UTF-8"))
+		) {
+			for (String line = br.readLine(); line != null; line = br.readLine()) {
+				line = line.trim();
+				if (line.startsWith("#")) continue;
+				if (line.length() == 0) continue;
+				out.add(CacheRecord.read(line));
 			}
 		} catch (FileNotFoundException e) {}
 		return out;

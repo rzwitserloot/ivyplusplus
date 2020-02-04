@@ -83,9 +83,10 @@ public class CompilationUnitImpl implements ICompilationUnit {
 		
 		StringBuffer result = new StringBuffer();
 		
-		try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(sourceFile), this._sourceFile.getEncoding()));
-			
+		try (
+			FileInputStream rawIn = new FileInputStream(sourceFile);
+			BufferedReader in = new BufferedReader(new InputStreamReader(rawIn, this._sourceFile.getEncoding()));
+		) {
 			String str;
 			while ((str = in.readLine()) != null) {
 				result.append(str);
