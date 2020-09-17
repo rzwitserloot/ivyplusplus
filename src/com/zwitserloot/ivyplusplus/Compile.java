@@ -32,6 +32,7 @@ import java.util.Map;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DynamicAttribute;
+import org.apache.tools.ant.Project;
 import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.UnknownElement;
 import org.apache.tools.ant.taskdefs.Copy;
@@ -52,7 +53,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 	private boolean ecj;
 	private boolean includeSystemBootclasspath;
 	private String copyExcludes;
-	private boolean destdirSet;
+	private String destdirLoc;
 	
 	public void setIncludeSystemBootclasspath(boolean includeSystemBootclasspath) {
 		this.includeSystemBootclasspath = includeSystemBootclasspath;
@@ -162,7 +163,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		matched |= setWithKey(javac, JAVAC_ATTR_MAP, name, value);
 		matched |= setWithKey(copy, COPY_ATTR_MAP, name, value);
 		if (!matched) throw new BuildException("Unknown property of compile task: " + name, getLocation());
-		if ("destdir".equals(name)) destdirSet = true;
+		if ("destdir".equals(name)) destdirLoc = value;
 	}
 	
 	public void setSrcdir(Path srcDir) {
@@ -208,11 +209,15 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 	}
 	
 	public void execute() {
-		if (!destdirSet) throw new BuildException("mandatory property 'destdir' not set.");
+		if (destdirLoc == null) throw new BuildException("mandatory property 'destdir' not set.");
+		log(getLocation().toString() + "compiling to " + destdirLoc, Project.MSG_VERBOSE);
 		if (src == null) src = new Path(getProject());
 		Map<?, ?> attributeMap = javac.getWrapper().getAttributeMap();
+		boolean hasRelease = attributeMap.containsKey("release");
 		for (Map.Entry<String, String> e : JAVAC_DEFAULTS.entrySet()) {
-			if (!attributeMap.containsKey(e.getKey())) javac.getWrapper().setAttribute(e.getKey(), e.getValue());
+			if (!(hasRelease && (e.getKey().equals("source") || e.getKey().equals("target"))) && !attributeMap.containsKey(e.getKey())) {
+				javac.getWrapper().setAttribute(e.getKey(), e.getValue());
+			}
 		}
 		attributeMap = copy.getWrapper().getAttributeMap();
 		for (Map.Entry<String, String> e : COPY_DEFAULTS.entrySet()) {

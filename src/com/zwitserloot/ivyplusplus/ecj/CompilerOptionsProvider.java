@@ -158,6 +158,33 @@ public class CompilerOptionsProvider {
 			}
 		}
 		
+		if (javac.getRelease() != null && !javac.getRelease().isEmpty()) {
+			String release = javac.getRelease();
+			if (release.equals("9")) {
+				result.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_9);
+				result.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_9);
+				result.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_9);
+			} else if (release.equals("10")) {
+				result.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_10);
+				result.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_10);
+				result.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_10);
+			} else if (release.equals("11")) {
+				result.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_11);
+				result.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_11);
+				result.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_11);
+			} else if (release.equals("12")) {
+				result.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_12);
+				result.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_12);
+				result.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_12);
+			} else if (release.equals("13")) {
+				result.put(CompilerOptions.OPTION_Compliance, CompilerOptions.VERSION_13);
+				result.put(CompilerOptions.OPTION_TargetPlatform, CompilerOptions.VERSION_13);
+				result.put(CompilerOptions.OPTION_Source, CompilerOptions.VERSION_13);
+			} else {
+				throw new BuildException("unknown java release: " + release);
+			}
+		}
+		
 		if (javac.getDebug()) {
 			String debugLevel = javac.getDebugLevel();
 			

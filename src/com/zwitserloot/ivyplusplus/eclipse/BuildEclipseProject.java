@@ -59,6 +59,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private List<Export> exports = new ArrayList<Export>();
 	private List<Lib> libs = new ArrayList<Lib>();
 	private String source = "1.8";
+	private String srcout = "bin";
 	private Settings settings;
 	private boolean pde = false;
 	
@@ -68,6 +69,10 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	
 	public void setProjectname(String projectname) {
 		this.projectname = projectname;
+	}
+	
+	public void setSrcout(String srcout) {
+		this.srcout = srcout;
 	}
 	
 	public void setSource(String source) {
@@ -426,7 +431,13 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		
 		for (Srcdir dir : srcdirs) {
 			String path = todir.toURI().relativize(dir.getDir().toURI()).toString();
-			elements.append("\t<classpathentry kind=\"src\" path=\"").append(path).append("\"");
+			elements.append("\t<classpathentry kind=\"src\" ");
+			if (!dir.getSrcout().isEmpty()) {
+				elements.append("output=\"");
+				elements.append(dir.getSrcout());
+				elements.append("\" ");
+			}
+			elements.append("path=\"").append(path).append("\"");
 			if (dir.isOptional()) {
 				elements.append(">\n\t\t<attributes>\n\t\t\t<attribute name=\"optional\" value=\"true\"/>\n\t\t</attributes>\n\t</classpathentry>\n");
 			} else {
@@ -497,7 +508,7 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 		}
 		elements.append("\t<classpathentry kind=\"con\" path=\"org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/")
 		.append(SOURCE_TO_CON.get(source)).append("\"/>\n");
-		elements.append("\t<classpathentry kind=\"output\" path=\"bin\"/>\n");
+		elements.append("\t<classpathentry kind=\"output\" path=\"" + srcout + "\"/>\n");
 		elements.append("</classpath>\n");
 		try {
 			generateDotProject();

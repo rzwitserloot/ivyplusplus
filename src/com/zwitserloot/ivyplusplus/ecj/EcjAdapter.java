@@ -325,13 +325,11 @@ public class EcjAdapter implements CompilerAdapter {
 		}
 		
 		@Override public NameEnvironmentAnswer findType(char[] typeName, char[][] packageName, char[] moduleName) {
-			NameEnvironmentAnswer answer = super.findType(typeName, packageName, moduleName);
-			return answer;
+			return super.findType(typeName, packageName, moduleName);
 		}
 		
 		@Override public NameEnvironmentAnswer findType(char[][] compoundName, char[] moduleName) {
-			NameEnvironmentAnswer answer = super.findType(compoundName, moduleName);
-			return answer;
+			return super.findType(compoundName, moduleName);
 		}
 	}
 	

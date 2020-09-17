@@ -1,5 +1,5 @@
 /**
- * Copyright © 2010 Reinier Zwitserloot.
+ * Copyright © 2010-2020 Reinier Zwitserloot.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@ public class Srcdir {
 	private File dir;
 	private boolean optional = false;
 	private boolean test = false;
+	private String srcout = "";
 	
 	public File getDir() {
 		return dir;
@@ -34,6 +35,14 @@ public class Srcdir {
 	
 	public void setDir(File dir) {
 		this.dir = dir;
+	}
+	
+	public String getSrcout() {
+		return srcout;
+	}
+	
+	public void setSrcout(String srcout) {
+		this.srcout = srcout;
 	}
 	
 	public boolean isOptional() {
@@ -53,7 +62,9 @@ public class Srcdir {
 	}
 	
 	@Override public String toString() {
-		return "Srcdir [dir=" + dir + ", optional=" + optional + ", test=" + test + "]";
+		String out = "Srcdir [dir=" + dir + ", optional=" + optional + ", test=" + test;
+		if (!srcout.isEmpty()) out += ", srcout=" + srcout;
+		return out + "]";
 	}
 	
 	@Override public int hashCode() {
@@ -62,6 +73,7 @@ public class Srcdir {
 		result = prime * result + ((dir == null) ? 0 : dir.hashCode());
 		result = prime * result + (optional ? 1231 : 1237);
 		result = prime * result + (test ? 1231 : 1237);
+		result = prime * result + srcout.hashCode();
 		return result;
 	}
 	
@@ -75,6 +87,7 @@ public class Srcdir {
 		} else if (!dir.equals(other.dir)) return false;
 		if (optional != other.optional) return false;
 		if (test != other.test) return false;
+		if (!srcout.equals(other.srcout)) return false;
 		return true;
 	}
 }

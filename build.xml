@@ -20,9 +20,9 @@
   THE SOFTWARE.
 -->
 <project name="com.zwitserloot.ivyplusplus" default="dist" xmlns:ivy="antlib:org.apache.ivy.ant">
-	<property name="jre.version" value="1.7" />
+	<property name="jre.version" value="1.8" />
 	<property name="ivy.retrieve.pattern" value="lib/[conf]/[artifact].[ext]" />
-	<property name="ivy.lib" value="ivy-2.4.0.jar" />
+	<property name="ivy.lib" value="ivy-2.5.0.jar" />
 	<property name="ivy.location" value="https://projectlombok.org/downloads/${ivy.lib}" />
 	<available file="lib/${ivy.lib}" property="ivy.available" />
 	
@@ -160,7 +160,7 @@
 	</target>
 	
 	<target name="config-ivy" depends="download-ivy">
-		<taskdef classpath="lib/ivy-2.4.0.jar" resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" />
+		<taskdef classpath="lib/${ivy.lib}" resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" />
 		<ivy:configure file="buildScripts/ivysettings.xml" />
 	</target>
 	
