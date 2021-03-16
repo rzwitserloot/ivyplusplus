@@ -7,19 +7,21 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Javac;
 import org.apache.tools.ant.taskdefs.compilers.CompilerAdapter;
-import org.apache.tools.ant.taskdefs.condition.Os;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Resource;
 import org.apache.tools.ant.types.resources.FileResource;
@@ -28,8 +30,10 @@ import org.eclipse.jdt.internal.compiler.Compiler;
 import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies;
 import org.eclipse.jdt.internal.compiler.IErrorHandlingPolicy;
 import org.eclipse.jdt.internal.compiler.IProblemFactory;
+import org.eclipse.jdt.internal.compiler.apt.dispatch.BatchAnnotationProcessorManager;
 import org.eclipse.jdt.internal.compiler.batch.FileSystem;
 import org.eclipse.jdt.internal.compiler.batch.FileSystem.Classpath;
+import org.eclipse.jdt.internal.compiler.batch.Main;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
 import org.eclipse.jdt.internal.compiler.env.IModuleAwareNameEnvironment;
 import org.eclipse.jdt.internal.compiler.env.NameEnvironmentAnswer;
@@ -47,6 +51,8 @@ public class EcjAdapter implements CompilerAdapter {
 	
 	private Javac javac;
 	private boolean includeSystemBootclasspath;
+	private Set<String> procClasses;
+	private Set<File> procJars;
 	
 	public void setJavac(Javac javac) {
 		this.javac = javac;
@@ -287,11 +293,7 @@ public class EcjAdapter implements CompilerAdapter {
 	private String getDefaultEncoding() {
 		String encoding = javac.getEncoding();
 		if (encoding != null) return encoding;
-		
-		if (Os.isFamily(Os.FAMILY_WINDOWS) && Charset.isSupported("Cp1252")) return "Cp1252";
-		if (Os.isFamily(Os.FAMILY_UNIX) && Charset.isSupported("UTF-8")) return "UTF-8";
-		if (Os.isFamily(Os.FAMILY_MAC) && Charset.isSupported("MacRoman")) return "MacRoman";
-		return System.getProperty("file.encoding");
+		return "UTF-8";
 	}
 	
 	private boolean hasSourceFolder(File sourceFile) {
@@ -343,12 +345,51 @@ public class EcjAdapter implements CompilerAdapter {
 		Compiler compiler = new Compiler(nameEnvironment, policy, new CompilerOptions(compilerOptions), requestor, problemFactory);
 		
 		if (Boolean.getBoolean("ecj.useMultiThreading")) compiler.useSingleThread = false;
+		BatchAnnotationProcessorManager aptManager = new BatchAnnotationProcessorManager();
+		
+		Main m = makeDummyMain();
+		m.batchCompiler = compiler;
+		List<String> aptArgs = new ArrayList<String>();
+		if (!procJars.isEmpty()) {
+			aptArgs.add("-processorpath");
+			StringBuilder sb = new StringBuilder();
+			for (File procJar : procJars) {
+				if (sb.length() > 0) sb.append(File.pathSeparator);
+				sb.append(procJar.getAbsolutePath());
+			}
+			aptArgs.add(sb.toString());
+		}
+		if (!procClasses.isEmpty()) {
+			aptArgs.add("-processor");
+			StringBuilder sb = new StringBuilder();
+			for (String procClass : procClasses) {
+				if (sb.length() > 0) sb.append(",");
+				sb.append(procClass);
+			}
+			aptArgs.add(sb.toString());
+		}
+		
+		aptManager.configure(m, aptArgs.toArray(new String[0]));
+		compiler.annotationProcessorManager = aptManager;
 		compiler.compile(sources);
 		CompileJobResultImpl result = new CompileJobResultImpl();
 		result.setSucceeded(requestor.isCompilationSuccessful());
 		result.setCategorizedProblems(requestor.getCategorizedProblems());
 		result.setCompiledClassFiles(requestor.getCompiledClassFiles());
 		return result;
+	}
+	
+	private Main makeDummyMain() {
+		// Make a dummy 'Main', because the ecj code is hard-linked to it existing. This is all hackery to get around
+		// an utterly unusable API. This API has been replaced, but the replacement cannot process annotations,
+		// unless you rewrite a ton of infrastructure.
+		
+		PrintWriter outWriter = new PrintWriter(new OutputStream() {
+			@Override public void write(int b) throws IOException {
+				// just ignore it silently.
+			}
+		});
+		return new Main(outWriter, outWriter, false, new HashMap<String, String>(), null);
 	}
 	
 	private ICompilationUnit[] getCompilationUnits(SourceFile[] sourceFiles) {
@@ -362,5 +403,10 @@ public class EcjAdapter implements CompilerAdapter {
 	
 	public void setIncludeSystemBootclasspath(boolean includeSystemBootclasspath) {
 		this.includeSystemBootclasspath = includeSystemBootclasspath;
+	}
+	
+	public void setAnnotationProcessorEntries(Set<String> procClasses, Set<File> procJars) {
+		this.procClasses = procClasses;
+		this.procJars = procJars;
 	}
 }

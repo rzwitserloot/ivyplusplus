@@ -127,6 +127,8 @@ The _destdir_ directory is also created automatically, so you don't have to `<mk
 
 (since ipp 1.22: You can also set ecj="true" to use ecj instead. Useful if you want to compile with old source/target).
 
+(since ipp 1.40: You can include a `<annotationProcessor jar="path/to/processor.jar" processor="fully.qualified.ClassName">` element, which is required to run APs in ecj).
+
 _Supported since ipp 1.0_
 
 ### `<ivy:cachedunjar>` - similar to unjar, except will not unpack jars that don't need to be unpacked.
