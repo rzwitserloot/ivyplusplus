@@ -9,14 +9,18 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import javax.tools.StandardLocation;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -30,7 +34,10 @@ import org.eclipse.jdt.internal.compiler.Compiler;
 import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies;
 import org.eclipse.jdt.internal.compiler.IErrorHandlingPolicy;
 import org.eclipse.jdt.internal.compiler.IProblemFactory;
+import org.eclipse.jdt.internal.compiler.apt.dispatch.BaseAnnotationProcessorManager;
 import org.eclipse.jdt.internal.compiler.apt.dispatch.BatchAnnotationProcessorManager;
+import org.eclipse.jdt.internal.compiler.apt.dispatch.BatchProcessingEnvImpl;
+import org.eclipse.jdt.internal.compiler.apt.util.EclipseFileManager;
 import org.eclipse.jdt.internal.compiler.batch.FileSystem;
 import org.eclipse.jdt.internal.compiler.batch.FileSystem.Classpath;
 import org.eclipse.jdt.internal.compiler.batch.Main;
@@ -337,16 +344,17 @@ public class EcjAdapter implements CompilerAdapter {
 	
 	public CompileJobResult compile(CompileJobDescription description) {
 		IModuleAwareNameEnvironment nameEnvironment = new MyFileSystem(description.getClasspaths());
-		Map<String, String> compilerOptions = description.getCompilerOptions();
+		Map<String, String> compilerOptionsMap = description.getCompilerOptions();
 		ICompilationUnit[] sources = getCompilationUnits(description.getSourceFiles());
 		IErrorHandlingPolicy policy = DefaultErrorHandlingPolicies.proceedWithAllProblems();
 		IProblemFactory problemFactory = new DefaultProblemFactory(Locale.getDefault());
 		CompilerRequestorImpl requestor = new CompilerRequestorImpl();
-		Compiler compiler = new Compiler(nameEnvironment, policy, new CompilerOptions(compilerOptions), requestor, problemFactory);
+		CompilerOptions compilerOptions = new CompilerOptions(compilerOptionsMap);
+		compilerOptions.storeAnnotations = true;
+		Compiler compiler = new Compiler(nameEnvironment, policy, compilerOptions, requestor, problemFactory);
 		
 		if (Boolean.getBoolean("ecj.useMultiThreading")) compiler.useSingleThread = false;
 		BatchAnnotationProcessorManager aptManager = new BatchAnnotationProcessorManager();
-		
 		Main m = makeDummyMain();
 		m.batchCompiler = compiler;
 		List<String> aptArgs = new ArrayList<String>();
@@ -371,6 +379,35 @@ public class EcjAdapter implements CompilerAdapter {
 		
 		aptManager.configure(m, aptArgs.toArray(new String[0]));
 		compiler.annotationProcessorManager = aptManager;
+		
+		EclipseFileManager filer = null;
+		
+		try {
+			Field f = BaseAnnotationProcessorManager.class.getDeclaredField("_processingEnv");
+			f.setAccessible(true);
+			BatchProcessingEnvImpl procEnv = (BatchProcessingEnvImpl) f.get(aptManager);
+			filer = (EclipseFileManager) procEnv.getFileManager();
+		} catch (NoSuchFieldException e) {
+			// we tried - maybe it's different infra.
+		} catch (IllegalAccessException e) {
+			// we tried - maybe it's different infra.
+		}
+		
+		if (filer != null) {
+			Set<File> sourcePath = new HashSet<File>();
+			Set<File> destinationPath = new HashSet<File>();
+			for (SourceFile sf : description.getSourceFiles()) {
+				sourcePath.add(sf.getSourceFolder());
+				destinationPath.add(sf.getDestinationFolder());
+			}
+			try {
+				filer.setLocation(StandardLocation.SOURCE_PATH, sourcePath);
+				filer.setLocation(StandardLocation.CLASS_OUTPUT, destinationPath);
+			} catch (IOException e) {
+				throw new BuildException("Can't set annotation processor filer paths", e);
+			}
+		}
+		
 		compiler.compile(sources);
 		CompileJobResultImpl result = new CompileJobResultImpl();
 		result.setSucceeded(requestor.isCompilationSuccessful());
