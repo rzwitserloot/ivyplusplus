@@ -89,12 +89,12 @@ public class Settings {
 		else if ("1.6".equals(source)) v = 6;
 		else if ("1.7".equals(source)) v = 7;
 		else if ("1.8".equals(source)) v = 8;
-		else if ("9".equals(source)) v = 9;
-		else if ("10".equals(source)) v = 10;
-		else if ("11".equals(source)) v = 11;
-		else if ("12".equals(source)) v = 12;
-		else if ("13".equals(source)) v = 13;
-		else v = 4;
+		else try {
+			v = Integer.parseInt(source);
+			if (v < 8 || v > 9999) throw new IllegalArgumentException("source: " + source);
+		} catch (NumberFormatException e) {
+			v = 4;
+		}
 		
 		todir = new File(todir, ".settings");
 		

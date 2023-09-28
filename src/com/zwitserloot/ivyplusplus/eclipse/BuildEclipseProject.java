@@ -316,6 +316,14 @@ public class BuildEclipseProject extends IvyPostResolveTask {
 	private static final Map<String, String> SOURCE_TO_CON;
 	static {
 		Map<String, String> map = new LinkedHashMap<String, String>();
+		map.put("25", "JavaSE-25");
+		map.put("24", "JavaSE-24");
+		map.put("23", "JavaSE-23");
+		map.put("22", "JavaSE-22");
+		map.put("21", "JavaSE-21");
+		map.put("20", "JavaSE-20");
+		map.put("19", "JavaSE-19");
+		map.put("18", "JavaSE-18");
 		map.put("17", "JavaSE-17");
 		map.put("16", "JavaSE-16");
 		map.put("15", "JavaSE-15");
