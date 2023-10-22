@@ -16,10 +16,6 @@ For a more thorough example, just like at the build file of this very project (c
 
 Run `ant eclipse` first, then just load the main directory of the project as eclipse project.
 
-## Developing com.zwitserloot.ivyplusplus in intellij
-
-Run `ant intellij` first, then just load the main directory of the project as intellij project.
-
 ## Extra Tasks
 
 ### `<ivy:intellijgen>` - creates intellij project files from your ivy configuration.
