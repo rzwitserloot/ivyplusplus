@@ -43,7 +43,6 @@ import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.taskdefs.Mkdir;
 import org.apache.tools.ant.types.FileSet;
 import org.apache.tools.ant.types.Path;
-import org.apache.tools.ant.util.facade.FacadeTaskHelper;
 import org.apache.tools.ant.util.facade.ImplementationSpecificArgument;
 
 import com.zwitserloot.ivyplusplus.ecj.EcjAdapter;
@@ -241,6 +240,7 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 		Javac javacTask = (Javac) javac.getRealThing();
 		javacTask.setSrcdir(src);
 		javacTask.createCompilerArg().setValue("-Xlint:unchecked");
+		for (ImplementationSpecificArgument isa : compilerArgs) javacTask.createCompilerArg().copyFrom(isa);
 		if (bootclasspath != null) javacTask.setBootclasspath(bootclasspath);
 		if (compileClasspath != null) javacTask.setClasspath(compileClasspath);
 		if (compileSourcepath != null) javacTask.setSourcepath(compileSourcepath);
@@ -257,36 +257,23 @@ public class Compile extends MatchingTask implements DynamicAttribute {
 			Field f = MatchingTask.class.getDeclaredField("fileset");
 			f.setAccessible(true);
 			f.set(javacTask, getImplicitFileSet().clone());
-			f = Javac.class.getDeclaredField("facade");
-			f.setAccessible(true);
-			FacadeTaskHelper facade = (FacadeTaskHelper) f.get(javacTask);
-			for (ImplementationSpecificArgument isa : compilerArgs) facade.addImplementationArgument(isa);
 			if (!procJars.isEmpty()) {
-				ImplementationSpecificArgument arg = new ImplementationSpecificArgument();
-				arg.setValue("-processorpath");
-				facade.addImplementationArgument(arg);
+				javacTask.createCompilerArg().setValue("-processorpath");
 				StringBuilder sb = new StringBuilder();
 				for (File procJar : procJars) {
 					if (sb.length() > 0) sb.append(File.pathSeparator);
 					sb.append(procJar.getAbsolutePath());
 				}
-				arg = new ImplementationSpecificArgument();
-				arg.setValue(sb.toString());
-				facade.addImplementationArgument(arg);
+				javacTask.createCompilerArg().setValue(sb.toString());
 			}
 			if (!procClasses.isEmpty()) {
-				ImplementationSpecificArgument arg = new ImplementationSpecificArgument();
-				arg.setValue("-processor");
-				facade.addImplementationArgument(arg);
+				javacTask.createCompilerArg().setValue("-processor");
 				StringBuilder sb = new StringBuilder();
 				for (String procClass : procClasses) {
 					if (sb.length() > 0) sb.append(",");
 					sb.append(procClass);
 				}
-				arg = new ImplementationSpecificArgument();
-				arg.setValue(sb.toString());
-				facade.addImplementationArgument(arg);
-				
+				javacTask.createCompilerArg().setValue(sb.toString());
 			}
 		} catch (Exception e) {
 			throw new BuildException(e, getLocation());
